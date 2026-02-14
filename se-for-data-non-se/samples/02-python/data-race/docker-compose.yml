@@ -1,0 +1,78 @@
+services:
+  frontend:
+    container_name: grandstand
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - race-public
+    depends_on:
+      api:
+        condition: service_started
+
+  api:
+    container_name: race-control
+    build: ./api
+    ports:
+      - "8000:8000"
+    networks:
+      - race-public
+      - race-internal
+    volumes:
+      - race-data:/data
+    depends_on:
+      runner-python:
+        condition: service_started
+      runner-pandas:
+        condition: service_started
+      runner-polars:
+        condition: service_started
+      runner-duckdb:
+        condition: service_started
+
+  runner-python:
+    container_name: pure-python
+    build:
+      context: ./runners
+      dockerfile: pure-python/Dockerfile
+    networks:
+      - race-internal
+    volumes:
+      - race-data:/data:ro
+
+  runner-pandas:
+    container_name: pandas-car
+    build:
+      context: ./runners
+      dockerfile: pandas/Dockerfile
+    networks:
+      - race-internal
+    volumes:
+      - race-data:/data:ro
+
+  runner-polars:
+    container_name: polars-car
+    build:
+      context: ./runners
+      dockerfile: polars/Dockerfile
+    networks:
+      - race-internal
+    volumes:
+      - race-data:/data:ro
+
+  runner-duckdb:
+    container_name: duckdb-car
+    build:
+      context: ./runners
+      dockerfile: duckdb/Dockerfile
+    networks:
+      - race-internal
+    volumes:
+      - race-data:/data:ro
+
+networks:
+  race-public:
+  race-internal:
+
+volumes:
+  race-data:

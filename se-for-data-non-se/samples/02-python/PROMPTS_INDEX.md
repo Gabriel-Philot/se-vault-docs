@@ -209,5 +209,5 @@ Salvar em: /home/bil/Documents/studies/se-vault/se-for-data-non-se/samples/02-py
 - [ ] 2.2 - Interpretado vs Compilado
 - [ ] 2.3 - Stack vs Heap
 - [ ] 2.4 - Memória em Python
-- [ ] 2.5 - Pandas/Polars/Spark
+- [x] 2.5 - Pandas/Polars/Spark
 - [ ] Prática

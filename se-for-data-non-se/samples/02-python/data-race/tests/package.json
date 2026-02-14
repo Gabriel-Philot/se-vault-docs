@@ -1,0 +1,14 @@
+{
+  "name": "data-race-tests",
+  "private": true,
+  "version": "0.1.0",
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed",
+    "test:e2e:debug": "npx playwright test --debug"
+  }
+}

@@ -1,0 +1,503 @@
+/* ===== Reset & Base ===== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ===== App Layout ===== */
+.app {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #FFD43B, #E4553D, #FFC107);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 1rem;
+  color: #888;
+  font-weight: 400;
+}
+
+/* ===== Dataset Panel ===== */
+.dataset-panel {
+  margin-bottom: 20px;
+}
+
+.dataset-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dataset-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dataset-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dataset-status-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dataset-btn {
+  background: transparent;
+  border: 1px solid;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.dataset-btn:hover:not(:disabled) {
+  background: #ffffff08;
+}
+
+.dataset-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dataset-progress {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dataset-progress-track {
+  flex: 1;
+  height: 14px;
+  background: #1a1a2e;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.dataset-progress-fill {
+  height: 100%;
+  border-radius: 7px;
+  background: linear-gradient(90deg, #FFC107, #E4553D);
+  box-shadow: 0 0 10px #FFC10760;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.dataset-progress-info {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #aaa;
+  white-space: nowrap;
+  min-width: 130px;
+  text-align: right;
+}
+
+.dataset-info-row {
+  margin-top: 10px;
+  display: flex;
+  gap: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.dataset-error {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #ef4444;
+}
+
+/* ===== Start Button ===== */
+.start-button-area {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+  min-height: 60px;
+  align-items: center;
+}
+
+.start-button {
+  background: linear-gradient(135deg, #E4553D, #FFC107);
+  color: #0a0a0a;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  border: none;
+  padding: 14px 48px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 24px #E4553D40;
+}
+
+.start-button:hover:not(:disabled) {
+  transform: scale(1.04);
+  box-shadow: 0 0 36px #E4553D60;
+}
+
+.start-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.countdown {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #FFC107;
+  text-shadow: 0 0 30px #FFC10780;
+  animation: pulse 0.7s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+}
+
+/* ===== Race Track ===== */
+.race-track-container {
+  background: #111;
+  border-radius: 12px;
+  border: 1px solid #222;
+  padding: 8px;
+  margin-bottom: 24px;
+}
+
+.race-track-container canvas {
+  display: block;
+}
+
+/* ===== Panels ===== */
+.panel {
+  background: #141422;
+  border: 1px solid #1e1e3a;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.panel-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+}
+
+.panels-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 700px) {
+  .panels-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Memory Bars ===== */
+.memory-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.memory-row:last-child { margin-bottom: 0; }
+
+.memory-label {
+  width: 90px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.memory-track {
+  flex: 1;
+  height: 14px;
+  background: #1a1a2e;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.memory-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.memory-value {
+  width: 72px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #aaa;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ===== Stage Indicator ===== */
+.stage-runner-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stage-runner-row:last-child { margin-bottom: 0; }
+
+.stage-runner-label {
+  width: 90px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.stage-pills {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+}
+
+.stage-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #1a1a2e;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+}
+
+.stage-pill-label {
+  color: #888;
+}
+
+.stage-done {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.stage-active {
+  color: #FFC107;
+  font-size: 1.2em;
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+.stage-pending {
+  color: #444;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ===== Leaderboard ===== */
+.leaderboard {
+  margin-bottom: 24px;
+}
+
+.leaderboard table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border-bottom: 1px solid #222;
+}
+
+.leaderboard td {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #1a1a2e;
+}
+
+.leaderboard .pos-cell {
+  width: 40px;
+}
+
+.finished-row {
+  background: #1a1a2e40;
+}
+
+/* ===== Results Prompt ===== */
+.results-prompt {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.results-btn {
+  background: transparent;
+  color: #FFC107;
+  border: 1px solid #FFC107;
+  padding: 10px 32px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.results-btn:hover {
+  background: #FFC10715;
+}
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000cc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: #141422;
+  border: 1px solid #2a2a4a;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.6rem;
+  cursor: pointer;
+}
+
+.modal-close:hover { color: #fff; }
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.modal-subtitle {
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 20px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 28px;
+}
+
+.results-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.results-table td {
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #1e1e3a;
+}
+
+.winner-row {
+  background: #FFC10710;
+}
+
+.notes-section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.note-card {
+  background: #1a1a2e;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+}
+
+.note-card:last-child { margin-bottom: 0; }
+
+.note-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.note-card p {
+  font-size: 0.82rem;
+  color: #aaa;
+  line-height: 1.5;
+}
