@@ -13,7 +13,9 @@ class BuildPipelineRequest(BaseModel):
 
 class BuildPipelineResponse(BaseModel):
     pipeline_id: str
+    factory_code: str
     python_code: str
+    raw_code: str
     message: str
 
 

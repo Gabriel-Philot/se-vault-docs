@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -31,6 +31,8 @@ interface ObjectInstance {
 
 interface BlueprintBuilderProps {
   onCodeChange: (code: string) => void;
+  resetKey?: number;
+  renderBeforeInstantiate?: React.ReactNode;
 }
 
 let nextId = 1;
@@ -40,6 +42,8 @@ const TYPE_OPTIONS = ["str", "int", "float", "bool", "list"];
 
 export default function BlueprintBuilder({
   onCodeChange,
+  resetKey,
+  renderBeforeInstantiate,
 }: BlueprintBuilderProps) {
   const [className, setClassName] = useState("Dog");
   const [classAttributes, setClassAttributes] = useState<AttributeData[]>([]);
@@ -63,6 +67,21 @@ export default function BlueprintBuilder({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (resetKey === undefined || resetKey === 0) return;
+    setClassName("Dog");
+    setClassAttributes([]);
+    setClassMethods([]);
+    setObjects([]);
+    setNewAttrName("");
+    setNewMethodName("");
+    setNewMethodParams("");
+    setNewMethodBody('print("hello")');
+    setInstanceName("");
+    setAttrValues({});
+    setError(null);
+  }, [resetKey]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -469,91 +488,6 @@ export default function BlueprintBuilder({
               </button>
             </div>
           </div>
-
-          {/* Instantiate form */}
-          <div
-            style={{
-              background: "var(--bg-secondary)",
-              border: "1px solid rgba(240,160,48,0.2)",
-              borderRadius: 8,
-              padding: "0.75rem",
-            }}
-          >
-            <h4
-              style={{
-                fontFamily: "var(--font-heading)",
-                fontSize: "0.8rem",
-                color: "var(--success)",
-                margin: "0 0 0.5rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
-            >
-              Instantiate Object
-            </h4>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.4rem",
-              }}
-            >
-              <input
-                value={instanceName}
-                onChange={(e) => setInstanceName(e.target.value)}
-                placeholder="my_dog"
-                style={inputStyle}
-              />
-              {classAttributes
-                .filter((a) => !a.is_private)
-                .map((attr) => (
-                  <div
-                    key={attr.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.4rem",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "0.7rem",
-                        color: "var(--text-secondary)",
-                        fontFamily: "var(--font-code)",
-                        minWidth: 60,
-                      }}
-                    >
-                      {attr.name}:
-                    </span>
-                    <input
-                      value={attrValues[attr.name] ?? ""}
-                      onChange={(e) =>
-                        setAttrValues((prev) => ({
-                          ...prev,
-                          [attr.name]: e.target.value,
-                        }))
-                      }
-                      placeholder={`${attr.type_hint} value`}
-                      style={{ ...inputStyle, flex: 1 }}
-                    />
-                  </div>
-                ))}
-              <button
-                onClick={instantiate}
-                disabled={loading || !instanceName.trim()}
-                style={{
-                  ...btnStyle,
-                  background: "var(--success)",
-                  color: "var(--bg-primary)",
-                  borderColor: "var(--success)",
-                  fontWeight: 700,
-                  opacity: loading || !instanceName.trim() ? 0.5 : 1,
-                }}
-              >
-                {loading ? "Creating..." : "Create Instance"}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -579,6 +513,95 @@ export default function BlueprintBuilder({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Slot for content before Instantiate (e.g. InteractiveExecutor) */}
+      {renderBeforeInstantiate}
+
+      {/* Instantiate form */}
+      <div
+        style={{
+          marginTop: "1.5rem",
+          background: "var(--bg-secondary)",
+          border: "1px solid rgba(240,160,48,0.2)",
+          borderRadius: 8,
+          padding: "0.75rem",
+        }}
+      >
+        <h4
+          style={{
+            fontFamily: "var(--font-heading)",
+            fontSize: "0.8rem",
+            color: "var(--success)",
+            margin: "0 0 0.5rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          Instantiate Object
+        </h4>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.4rem",
+          }}
+        >
+          <input
+            value={instanceName}
+            onChange={(e) => setInstanceName(e.target.value)}
+            placeholder="my_dog"
+            style={inputStyle}
+          />
+          {classAttributes
+            .filter((a) => !a.is_private)
+            .map((attr) => (
+              <div
+                key={attr.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "var(--text-secondary)",
+                    fontFamily: "var(--font-code)",
+                    minWidth: 60,
+                  }}
+                >
+                  {attr.name}:
+                </span>
+                <input
+                  value={attrValues[attr.name] ?? ""}
+                  onChange={(e) =>
+                    setAttrValues((prev) => ({
+                      ...prev,
+                      [attr.name]: e.target.value,
+                    }))
+                  }
+                  placeholder={`${attr.type_hint} value`}
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+              </div>
+            ))}
+          <button
+            onClick={instantiate}
+            disabled={loading || !instanceName.trim()}
+            style={{
+              ...btnStyle,
+              background: "var(--success)",
+              color: "var(--bg-primary)",
+              borderColor: "var(--success)",
+              fontWeight: 700,
+              opacity: loading || !instanceName.trim() ? 0.5 : 1,
+            }}
+          >
+            {loading ? "Creating..." : "Create Instance"}
+          </button>
+        </div>
+      </div>
 
       {/* Instantiated Objects */}
       {objects.length > 0 && (

@@ -7,6 +7,8 @@ from app.models.page4_polymorphism import (
     SourcesResponse,
     ExecutePolymorphismRequest,
     PolymorphismEvent,
+    ClassHierarchyInfo,
+    ChildClassInfo,
 )
 from app.sse.stream import sse_response
 
@@ -39,9 +41,32 @@ _SIMULATED_OUTPUT: dict[str, str] = {
 }
 
 
+_HIERARCHY = ClassHierarchyInfo(
+    base_class_name="DataSource",
+    base_class_code="from abc import ABC, abstractmethod\n\nclass DataSource(ABC):\n    @abstractmethod\n    def read(self) -> Any:\n        \"\"\"Read data from the source.\"\"\"\n        ...",
+    children=[
+        ChildClassInfo(
+            class_name="CsvSource",
+            class_code="class CsvSource(DataSource):\n    def __init__(self, path: str):\n        self.path = path\n\n    def read(self):\n        with open(self.path) as f:\n            reader = csv.DictReader(f)\n            return list(reader)",
+        ),
+        ChildClassInfo(
+            class_name="ParquetSource",
+            class_code="class ParquetSource(DataSource):\n    def __init__(self, path: str):\n        self.path = path\n\n    def read(self):\n        table = pq.read_table(self.path)\n        return table.to_pydict()",
+        ),
+        ChildClassInfo(
+            class_name="ApiSource",
+            class_code='class ApiSource(DataSource):\n    def __init__(self, url: str):\n        self.url = url\n\n    def read(self):\n        response = requests.get(self.url)\n        response.raise_for_status()\n        return response.json()',
+        ),
+    ],
+)
+
+
 @router.get("/sources", response_model=SourcesResponse)
 def list_sources():
-    return SourcesResponse(sources=list(_SOURCES.values()))
+    return SourcesResponse(
+        sources=list(_SOURCES.values()),
+        hierarchy=_HIERARCHY,
+    )
 
 
 @router.post("/execute")

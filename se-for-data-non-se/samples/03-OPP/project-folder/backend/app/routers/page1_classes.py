@@ -1,14 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from app.models.common import OOPClass, OOPInstance, Attribute
+from app.models.common import OOPClass, OOPInstance, Attribute, ExecutionResult
 from app.models.page1_classes import (
     CreateClassRequest,
     CreateClassResponse,
     InstantiateRequest,
     InstantiateResponse,
     ClassCodeResponse,
+    ExecuteRequest,
 )
 from app.state import class_registry
 from app.codegen import generate_class_code
+from app.engine.executor import execute_code
 
 router = APIRouter()
 
@@ -68,6 +70,24 @@ def get_class_code(name: str):
         raise HTTPException(status_code=404, detail=f"Class '{name}' not found.")
     _, python_code = class_registry[name]
     return ClassCodeResponse(name=name, python_code=python_code)
+
+
+@router.post("/execute", response_model=ExecutionResult)
+def execute_user_code(req: ExecuteRequest):
+    # Concatenate all registered class definitions as preamble
+    preamble_lines: list[str] = []
+    for _, (_, py_code) in class_registry.items():
+        preamble_lines.append(py_code)
+        preamble_lines.append("")
+    preamble = "\n".join(preamble_lines)
+    full_code = preamble + req.code
+    return execute_code(full_code)
+
+
+@router.post("/reset")
+def reset_classes():
+    class_registry.clear()
+    return {"message": "Class registry cleared."}
 
 
 def _format_value(attr: Attribute) -> str:

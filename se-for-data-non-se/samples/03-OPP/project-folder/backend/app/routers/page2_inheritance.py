@@ -77,6 +77,12 @@ def _generate_child_code(child: OOPClass, all_attrs: list[Attribute], all_method
     return "\n".join(lines)
 
 
+@router.post("/reset")
+def reset_inheritance():
+    class_registry.clear()
+    return {"message": "Inheritance registry cleared."}
+
+
 @router.get("/tree", response_model=InheritanceTree)
 def get_tree():
     children_map: dict[str | None, list[str]] = {}

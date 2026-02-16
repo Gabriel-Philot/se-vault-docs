@@ -1,4 +1,4 @@
-# Mini-Aula 02.3: Stack vs Heap — Entendendo a Memória
+# Mini-Aula 02.4: Stack vs Heap — Entendendo a Memória
 
 > **Objetivo:** Entender onde seus dados vivem na memória e por que isso importa quando sua pipeline OOM.
 
@@ -427,6 +427,6 @@ Máquina única:        Cluster Spark:
 
 ## Conexões
 
-- **Anterior:** [02 - Interpretado vs Compilado](./02_interpretado_vs_compilado.md)
-- **Próximo:** [04 - Gerenciamento de Memória em Python](./04_memoria_python.md)
-- **Complementar:** A aula 2.4 vai aprofundar como Python gerencia o heap (reference counting, GC)
+- **Anterior:** [03 - Interpretado vs Compilado](./03_interpretado_vs_compilado.md)
+- **Próximo:** [05 - Gerenciamento de Memória em Python](./05_memoria_python.md)
+- **Complementar:** A aula 2.5 vai aprofundar como Python gerencia o heap (reference counting, GC)

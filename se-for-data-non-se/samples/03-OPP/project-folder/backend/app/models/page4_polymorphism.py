@@ -8,8 +8,20 @@ class SourceInfo(BaseModel):
     read_method_body: str
 
 
+class ChildClassInfo(BaseModel):
+    class_name: str
+    class_code: str
+
+
+class ClassHierarchyInfo(BaseModel):
+    base_class_name: str
+    base_class_code: str
+    children: list[ChildClassInfo]
+
+
 class SourcesResponse(BaseModel):
     sources: list[SourceInfo]
+    hierarchy: ClassHierarchyInfo | None = None
 
 
 class ExecutePolymorphismRequest(BaseModel):

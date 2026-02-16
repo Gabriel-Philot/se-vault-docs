@@ -1,4 +1,4 @@
-# Mini-Aula 02.4: Gerenciamento de Memória em Python
+# Mini-Aula 02.5: Gerenciamento de Memória em Python
 
 > **Objetivo:** Entender como Python gerencia memória internamente e por que seu DataFrame come toda RAM.
 
@@ -6,7 +6,7 @@
 
 ## Conexão com a Aula Anterior
 
-Na aula 03, vimos que a memória se divide em **Stack** e **Heap**. Agora vamos aprofundar:
+Na aula 04, vimos que a memória se divide em **Stack** e **Heap**. Agora vamos aprofundar:
 
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
@@ -551,6 +551,6 @@ df.info(memory_usage="deep")
 
 ## Conexões
 
-- **Anterior:** [03 - Stack vs Heap](./03_stack_vs_heap.md)
-- **Próximo:** [05 - Pandas, Polars, Spark](./05_pandas_polars_spark.md)
-- **Complementar:** A aula 05 vai aprofundar por que Polars/Spark são mais eficientes
+- **Anterior:** [04 - Stack vs Heap](./04_stack_vs_heap.md)
+- **Próximo:** [06 - Pandas, Polars, Spark](./06_pandas_polars_spark.md)
+- **Complementar:** A aula 06 vai aprofundar por que Polars/Spark são mais eficientes

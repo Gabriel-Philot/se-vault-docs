@@ -1,4 +1,4 @@
-# Mini-Aula 02.5: Pandas vs Polars vs Spark
+# Mini-Aula 02.6: Pandas vs Polars vs Spark
 
 > **Objetivo:** Entender por que Pandas consome tanta RAM, quando usar Polars ou Spark, e como otimizar transformações no dia a dia.
 
@@ -6,7 +6,7 @@
 
 ## Conexão com a Aula Anterior
 
-Na aula 04, vimos que **tudo em Python é objeto no Heap** e que cada `int` custa 28 bytes. Agora a pergunta prática:
+Na aula 05, vimos que **tudo em Python é objeto no Heap** e que cada `int` custa 28 bytes. Agora a pergunta prática:
 
 > Se um `int` já pesa 7x mais que em C, o que acontece quando você carrega 10 milhões de linhas num DataFrame?
 
@@ -271,6 +271,6 @@ memory_leak_demo.py:14: size=3340 KiB  ← a linha do append
 
 ## Conexões
 
-- **Anterior:** [04 - Memória em Python](./04_memoria_python.md)
+- **Anterior:** [05 - Memória em Python](./05_memoria_python.md)
 - **Próximo:** [Prática do Módulo 02](./pratica.md)
-- **Complementar:** A aula 04 explica *por que* PyObjects são caros; esta aula mostra as *alternativas*
+- **Complementar:** A aula 05 explica *por que* PyObjects são caros; esta aula mostra as *alternativas*

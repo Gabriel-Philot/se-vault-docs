@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -25,7 +25,8 @@ interface StageState {
 }
 
 interface PipelineBuilderProps {
-  onCodeChange: (code: string) => void;
+  onCodeChange: (code: string, rawCode?: string, factoryCode?: string) => void;
+  resetKey?: number;
 }
 
 const STAGE_PALETTE: Stage[] = [
@@ -48,7 +49,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 let nodeId = 0;
 
-export default function PipelineBuilder({ onCodeChange }: PipelineBuilderProps) {
+export default function PipelineBuilder({ onCodeChange, resetKey }: PipelineBuilderProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [pipelineId, setPipelineId] = useState<string | null>(null);
@@ -62,6 +63,21 @@ export default function PipelineBuilder({ onCodeChange }: PipelineBuilderProps) 
   const [swapIndex, setSwapIndex] = useState("0");
   const [swapClass, setSwapClass] = useState("");
   const lastNodeIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (resetKey === undefined || resetKey === 0) return;
+    setNodes([]);
+    setEdges([]);
+    setPipelineId(null);
+    setStages([]);
+    setStageStates({});
+    setRunning(false);
+    setLoading(false);
+    setMessage(null);
+    setSwapIndex("0");
+    setSwapClass("");
+    lastNodeIdRef.current = null;
+  }, [resetKey, setNodes, setEdges]);
 
   const addStage = (stage: Stage) => {
     const id = `stage-${nodeId++}`;
@@ -137,7 +153,7 @@ export default function PipelineBuilder({ onCodeChange }: PipelineBuilderProps) 
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setPipelineId(data.pipeline_id);
-      onCodeChange(data.python_code);
+      onCodeChange(data.python_code, data.raw_code, data.factory_code);
       setMessage(data.message);
     } catch (err: unknown) {
       setMessage(err instanceof Error ? err.message : "Failed to build");
@@ -247,7 +263,7 @@ export default function PipelineBuilder({ onCodeChange }: PipelineBuilderProps) 
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      onCodeChange(data.python_code);
+      onCodeChange(data.python_code, data.raw_code, data.factory_code);
       setMessage(data.message);
 
       // Update local state

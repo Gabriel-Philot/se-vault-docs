@@ -1,0 +1,3 @@
+[     882ms] [WARNING] No routes matched location "/page/1"  @ http://localhost:5173/node_modules/.vite/deps/react-router.js?v=2409e285:631
+[     883ms] [WARNING] No routes matched location "/page/1"  @ http://localhost:5173/node_modules/.vite/deps/react-router.js?v=2409e285:631
+[     954ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0

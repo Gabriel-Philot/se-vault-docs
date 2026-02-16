@@ -1,4 +1,4 @@
-# Mini-Aula 02.2: Python vs C — Interpretado vs Compilado
+# Mini-Aula 02.3: Python vs C — Interpretado vs Compilado
 
 > **Objetivo:** Entender como linguagens executam código e por que isso importa para Data Engineering.
 
@@ -198,6 +198,6 @@ PySpark Code → Driver Python → Serializa para JVM → Workers JVM executam
 
 ## Conexões
 
-- **Anterior:** [01 - Bits, Bytes e Linguagens](./01_bits_bytes_linguagens.md)
-- **Próximo:** [03 - Gerenciamento de Memória](./03_gerenciamento_memoria.md)
+- **Anterior:** [02 - Linux, Processos e Bash](./02_linux_so_bash.md)
+- **Próximo:** [04 - Stack vs Heap](./04_stack_vs_heap.md)
 - **Complementar:** Por que frameworks modernos (Polars, DuckDB) escolhem Rust/C++

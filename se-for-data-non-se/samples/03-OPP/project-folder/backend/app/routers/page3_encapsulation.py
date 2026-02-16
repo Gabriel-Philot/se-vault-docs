@@ -12,6 +12,12 @@ from app.state import class_registry
 router = APIRouter()
 
 
+@router.post("/reset")
+def reset_encapsulation():
+    class_registry.pop("DatabaseConnection", None)
+    return {"message": "Encapsulation demo reset."}
+
+
 @router.post("/access", response_model=AccessResponse)
 def try_access(req: AccessRequest):
     if req.class_name not in class_registry:

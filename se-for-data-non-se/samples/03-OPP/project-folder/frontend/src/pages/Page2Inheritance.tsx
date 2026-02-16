@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import FamilyTree from "@/components/page2/FamilyTree";
 import CodeTerminal from "@/components/layout/CodeTerminal";
+import ResetButton from "@/components/shared/ResetButton";
 
 const inputStyle: React.CSSProperties = {
   padding: "0.4rem 0.6rem",
@@ -31,6 +32,7 @@ export default function Page2Inheritance() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
 
   // Child creation form
   const [childName, setChildName] = useState("");
@@ -125,30 +127,52 @@ export default function Page2Inheritance() {
     }
   };
 
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await fetch("/api/inheritance/reset", { method: "POST" });
+      setCode("");
+      setChildName("");
+      setParentName("");
+      setOwnAttrs([]);
+      setOwnMethods([]);
+      setOverriddenMethods([]);
+      setError(null);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      // ignore
+    } finally {
+      setResetting(false);
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       {/* Header */}
-      <div>
-        <h2
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "1.6rem",
-            fontWeight: 700,
-            color: "var(--accent-spice)",
-            margin: 0,
-          }}
-        >
-          Family Tree
-        </h2>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            fontSize: "0.82rem",
-            marginTop: "0.3rem",
-          }}
-        >
-          Visualize class inheritance. Click a node to see its resolved code.
-        </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h2
+            style={{
+              fontFamily: "var(--font-heading)",
+              fontSize: "1.6rem",
+              fontWeight: 700,
+              color: "var(--accent-spice)",
+              margin: 0,
+            }}
+          >
+            Family Tree
+          </h2>
+          <p
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.82rem",
+              marginTop: "0.3rem",
+            }}
+          >
+            Visualize class inheritance. Click a node to see its resolved code.
+          </p>
+        </div>
+        <ResetButton onReset={handleReset} loading={resetting} />
       </div>
 
       {/* Tree visualization */}
@@ -216,7 +240,7 @@ export default function Page2Inheritance() {
                   borderRadius: 3,
                 }}
               >
-                {a.is_private ? "🔒 " : "🔓 "}
+                {a.is_private ? "\u{1F512} " : "\u{1F513} "}
                 {a.name}: {a.type_hint}
               </div>
             ))}
@@ -232,7 +256,7 @@ export default function Page2Inheritance() {
                   borderRadius: 3,
                 }}
               >
-                <span style={{ fontSize: "0.6rem" }}>Proprio</span> ƒ{" "}
+                <span style={{ fontSize: "0.6rem" }}>Proprio</span> \u0192{" "}
                 {m.name}()
               </div>
             ))}
@@ -248,7 +272,7 @@ export default function Page2Inheritance() {
                   borderRadius: 3,
                 }}
               >
-                <span style={{ fontSize: "0.6rem" }}>Override</span> ƒ{" "}
+                <span style={{ fontSize: "0.6rem" }}>Override</span> \u0192{" "}
                 {m.name}()
               </div>
             ))}

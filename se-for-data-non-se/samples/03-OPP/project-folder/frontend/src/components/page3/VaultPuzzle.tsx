@@ -29,6 +29,7 @@ interface DemoData {
 
 interface VaultPuzzleProps {
   onCodeChange: (code: string) => void;
+  resetKey?: number;
 }
 
 /* ---------- tiny sub-components ---------- */
@@ -141,7 +142,7 @@ function DroppableAttr({
 
 /* ---------- main component ---------- */
 
-export default function VaultPuzzle({ onCodeChange }: VaultPuzzleProps) {
+export default function VaultPuzzle({ onCodeChange, resetKey }: VaultPuzzleProps) {
   const [demo, setDemo] = useState<DemoData | null>(null);
   const [unlockedAttrs, setUnlockedAttrs] = useState<Set<string>>(new Set());
   const [deniedAttr, setDeniedAttr] = useState<string | null>(null);
@@ -163,11 +164,14 @@ export default function VaultPuzzle({ onCodeChange }: VaultPuzzleProps) {
         const data = await res.json();
         setDemo(data);
         onCodeChange(data.python_code);
+        setUnlockedAttrs(new Set());
+        setDeniedAttr(null);
+        setMessage(null);
       } catch {
         // ignore
       }
     })();
-  }, [onCodeChange]);
+  }, [onCodeChange, resetKey]);
 
   const tryDirectAccess = useCallback(
     async (attrName: string) => {

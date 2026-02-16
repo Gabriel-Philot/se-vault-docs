@@ -15,6 +15,7 @@ interface SourceState {
 
 interface ArenaProps {
   onCodeChange: (code: string) => void;
+  resetKey?: number;
 }
 
 const SOURCE_COLORS: Record<string, string> = {
@@ -23,11 +24,17 @@ const SOURCE_COLORS: Record<string, string> = {
   ApiSource: "var(--success)",
 };
 
-export default function Arena({ onCodeChange }: ArenaProps) {
+export default function Arena({ onCodeChange, resetKey }: ArenaProps) {
   const [sources, setSources] = useState<SourceInfo[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [states, setStates] = useState<Record<string, SourceState>>({});
   const [executing, setExecuting] = useState(false);
+  const [hierarchy, setHierarchy] = useState<{
+    base_class_name: string;
+    base_class_code: string;
+    children: { class_name: string; class_code: string }[];
+  } | null>(null);
+  const [hierarchyOpen, setHierarchyOpen] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -36,13 +43,14 @@ export default function Arena({ onCodeChange }: ArenaProps) {
         if (!res.ok) return;
         const data = await res.json();
         setSources(data.sources);
-        // Select all by default
         setSelected(new Set(data.sources.map((s: SourceInfo) => s.class_name)));
+        setStates({});
+        if (data.hierarchy) setHierarchy(data.hierarchy);
       } catch {
         // ignore
       }
     })();
-  }, []);
+  }, [resetKey]);
 
   const toggleSource = (name: string) => {
     setSelected((prev) => {
@@ -162,6 +170,176 @@ export default function Arena({ onCodeChange }: ArenaProps) {
           execute to see polymorphism in action.
         </p>
       </div>
+
+      {/* Class Hierarchy */}
+      {hierarchy && (
+        <div
+          style={{
+            background: "var(--bg-secondary)",
+            border: "1px solid rgba(45,125,210,0.15)",
+            borderRadius: 10,
+            marginBottom: "1.5rem",
+            overflow: "hidden",
+          }}
+        >
+          <button
+            onClick={() => setHierarchyOpen(!hierarchyOpen)}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0.6rem 1rem",
+              background: "rgba(45,125,210,0.06)",
+              border: "none",
+              borderBottom: hierarchyOpen
+                ? "1px solid rgba(45,125,210,0.1)"
+                : "none",
+              color: "var(--accent-fremen)",
+              fontFamily: "var(--font-heading)",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+            }}
+          >
+            <span>Class Hierarchy</span>
+            <span
+              style={{
+                fontSize: "0.7rem",
+                transform: hierarchyOpen ? "rotate(0)" : "rotate(-90deg)",
+                transition: "transform 0.2s",
+              }}
+            >
+              {"\u25BC"}
+            </span>
+          </button>
+
+          {hierarchyOpen && (
+            <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              {/* Base class box */}
+              <div
+                style={{
+                  background: "var(--code-bg)",
+                  border: "2px solid var(--accent-fremen)",
+                  borderRadius: 8,
+                  padding: "0.75rem 1.25rem",
+                  textAlign: "center",
+                  boxShadow: "0 0 16px rgba(45,125,210,0.2)",
+                  maxWidth: 320,
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "var(--font-heading)",
+                    fontSize: "0.9rem",
+                    fontWeight: 700,
+                    color: "var(--accent-fremen)",
+                    marginBottom: "0.3rem",
+                  }}
+                >
+                  {hierarchy.base_class_name} (ABC)
+                </div>
+                <pre
+                  style={{
+                    fontSize: "0.6rem",
+                    fontFamily: "var(--font-code)",
+                    color: "var(--code-text)",
+                    margin: 0,
+                    whiteSpace: "pre-wrap",
+                    textAlign: "left",
+                  }}
+                >
+                  @abstractmethod{"\n"}def read(self) -{">"} Any: ...
+                </pre>
+              </div>
+
+              {/* Vertical connector */}
+              <div style={{ width: 2, height: 24, background: "rgba(45,125,210,0.3)" }} />
+
+              {/* Horizontal connector */}
+              <div
+                style={{
+                  width: `${Math.max(60, hierarchy.children.length * 33)}%`,
+                  height: 2,
+                  background: "rgba(45,125,210,0.3)",
+                  position: "relative",
+                }}
+              />
+
+              {/* Child class boxes */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${hierarchy.children.length}, 1fr)`,
+                  gap: "1rem",
+                  width: "100%",
+                  marginTop: 0,
+                }}
+              >
+                {hierarchy.children.map((child) => {
+                  const color =
+                    SOURCE_COLORS[child.class_name] ?? "var(--accent-spice)";
+                  return (
+                    <div
+                      key={child.class_name}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+                    >
+                      {/* Vertical connector from horizontal line */}
+                      <div
+                        style={{
+                          width: 2,
+                          height: 20,
+                          background: "rgba(45,125,210,0.3)",
+                        }}
+                      />
+                      <div
+                        style={{
+                          background: "var(--code-bg)",
+                          border: `1px solid ${color}`,
+                          borderRadius: 8,
+                          padding: "0.6rem 0.75rem",
+                          width: "100%",
+                          boxShadow: `0 0 10px ${color}22`,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: "var(--font-heading)",
+                            fontSize: "0.8rem",
+                            fontWeight: 700,
+                            color,
+                            marginBottom: "0.25rem",
+                          }}
+                        >
+                          {child.class_name}
+                        </div>
+                        <pre
+                          style={{
+                            fontSize: "0.55rem",
+                            fontFamily: "var(--font-code)",
+                            color: "var(--code-text)",
+                            margin: 0,
+                            whiteSpace: "pre-wrap",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {child.class_code
+                            .split("\n")
+                            .filter((l) => l.includes("def read"))
+                            .map((l) => l.trim())
+                            .join("\n") || "def read(self): ..."}
+                        </pre>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Source cards */}
       <div

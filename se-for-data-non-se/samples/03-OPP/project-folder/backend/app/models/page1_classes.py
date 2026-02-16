@@ -27,3 +27,7 @@ class InstantiateResponse(BaseModel):
 class ClassCodeResponse(BaseModel):
     name: str
     python_code: str
+
+
+class ExecuteRequest(BaseModel):
+    code: str
