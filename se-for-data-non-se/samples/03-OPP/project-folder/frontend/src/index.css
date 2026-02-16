@@ -1,0 +1,55 @@
+:root {
+  /* Dune palette */
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #1a1610;
+  --accent-spice: #e8722a;
+  --accent-fremen: #2d7dd2;
+  --text-primary: #e8dcc8;
+  --text-secondary: #8a7e6b;
+  --success: #f0a030;
+  --error: #c0392b;
+  --code-bg: #0d0d12;
+  --code-text: #d4a054;
+
+  /* Fonts */
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-code: "JetBrains Mono", "Fira Code", monospace;
+  --font-heading: "Rajdhani", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+}
+
+code, pre {
+  font-family: var(--font-code);
+}
+
+a {
+  color: var(--accent-fremen);
+  text-decoration: none;
+}

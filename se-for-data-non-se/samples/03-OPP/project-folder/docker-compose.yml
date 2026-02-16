@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    container_name: oop-engine
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+
+  frontend:
+    build: ./frontend
+    container_name: oop-ui
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+    environment:
+      - VITE_API_URL=http://localhost:8000
