@@ -100,14 +100,38 @@ Criterios: manter loop principal estavel, testes por estrategia, sem heranca pro
 
 ---
 
-## 8. Conexao com dados (conhecimento proximal)
+## 8. Conexao com dados (mini matriz objetiva de cenarios)
 
-Engenheiro de dados forte:
+Use como check rapido: some 1 ponto para cada `Sim`.
 
-- sabe quando acelerar com solucao simples
-- sabe quando parar e estruturar para o futuro
-- documenta decisao com trade-off
-- usa IA como multiplicador, nao como substituto de criterio
+Criticos:
+- C1: Horizonte > 3 meses
+- C2: Mudanca frequente de regra/fonte
+- C3: Multiplos mantenedores
+- C4: Custo de falha alto (SLA/financeiro/compliance)
+
+Regra de acao:
+- 0-1: acelerar com solucao simples
+- 2-3: estruturar o minimo (contrato + testes essenciais)
+- 4: estruturar para evolucao (pattern + testes de regressao + observabilidade)
+
+| Cenario comum em dados | C1 | C2 | C3 | C4 | Score | Decisao objetiva |
+|---|---|---|---|---|---|---|
+| Script ad hoc para analise de incidente (1 dia) | Nao | Nao | Nao | Nao | 0 | Simples, sem pattern |
+| Job batch diario de ingestao multi-fonte (`CSV/API/S3`) | Sim | Sim | Sim | Sim | 4 | Factory/Strategy + contrato por fonte |
+| Transformacao por cliente com regra mensal | Sim | Sim | Sim | Medio/Sim | 3-4 | Strategy + suite de testes por cliente |
+| ETL interno de backoffice estavel (1 dono) | Sim | Nao | Nao | Nao | 1 | Simples com boa organizacao de funcoes |
+| Pipeline CDC para replicacao entre bancos | Sim | Sim | Sim | Sim | 4 | Contratos claros, idempotencia, retries |
+| Streaming de eventos para deteccao de fraude | Sim | Sim | Sim | Sim | 4 | Arquitetura orientada a eventos + testes de carga |
+| Dashboard semanal com fonte unica estavel | Sim | Nao | Sim | Nao | 2 | Estrutura minima, evitar hierarquia complexa |
+| Integracao one-off de vendor com API instavel | Nao | Sim | Nao | Medio | 1-2 | Adapter simples + logs + timeout/retry |
+| MLOps feature pipeline para varios modelos | Sim | Sim | Sim | Sim | 4 | Componentizacao por etapa + contratos/versionamento |
+| Migracao legado para lakehouse por ondas | Sim | Sim | Sim | Sim | 4 | Padrao por dominio, rollback por lote |
+
+Resumo pratico:
+- Engenheiro de dados forte acelera quando score e baixo.
+- Engenheiro de dados forte estrutura quando score sobe.
+- Sempre registra trade-off e usa IA para ampliar execucao, nao para terceirizar criterio.
 
 ---
 
