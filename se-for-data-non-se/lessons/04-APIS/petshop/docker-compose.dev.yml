@@ -1,0 +1,10 @@
+services:
+  nginx:
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - frontend-dev
+
+  frontend-dev:
+    profiles: []

@@ -1,0 +1,59 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - executor
+    networks:
+      - petshop-net
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://petshop:petshop@db:5432/petshop
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - petshop-net
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: petshop
+      POSTGRES_PASSWORD: petshop
+      POSTGRES_DB: petshop
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - petshop-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petshop -d petshop"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - petshop-net
+
+  executor:
+    build: ./executor
+    networks:
+      - petshop-net
+    read_only: true
+    tmpfs:
+      - /tmp/sandbox:size=10M,mode=1777
+
+networks:
+  petshop-net:
+
+volumes:
+  pgdata:
