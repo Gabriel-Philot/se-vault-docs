@@ -5,7 +5,6 @@ import {
   Search, 
   Box, 
   Code,
-  BookOpen,
   Database
 } from 'lucide-react';
 
@@ -48,17 +47,14 @@ export default function Sidebar() {
         
         <div className="sidebar-section">
           <div className="sidebar-section-title">
-            <BookOpen size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
-            Licoes
+            <Code size={14} style={{ display: 'inline', marginRight: '0.5rem' }} />
+            Code Pillars
           </div>
           {[
-            { to: '/lessons/00', label: 'O que e API?' },
-            { to: '/lessons/01', label: 'HTTP Verbs' },
-            { to: '/lessons/02', label: 'Status Codes' },
-            { to: '/lessons/03', label: 'FastAPI + Pydantic' },
-            { to: '/lessons/04', label: 'CRUD Completo' },
-            { to: '/lessons/05', label: 'Nginx' },
-            { to: '/lessons/06', label: 'Redis Cache' },
+            { to: '/code/models', label: 'Models', icon: '📋' },
+            { to: '/code/crud', label: 'CRUD', icon: '🔄' },
+            { to: '/code/actions', label: 'Actions', icon: '⚡' },
+            { to: '/code/cache', label: 'Cache', icon: '🔴' },
           ].map((item) => (
             <NavLink
               key={item.to}
@@ -67,7 +63,7 @@ export default function Sidebar() {
                 `sidebar-link ${isActive ? 'active' : ''}`
               }
             >
-              <span className="sidebar-link-icon" style={{ fontSize: '0.875rem' }}>📄</span>
+              <span className="sidebar-link-icon" style={{ fontSize: '0.875rem' }}>{item.icon}</span>
               <span style={{ fontSize: '0.875rem' }}>{item.label}</span>
             </NavLink>
           ))}

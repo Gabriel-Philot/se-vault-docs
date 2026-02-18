@@ -363,3 +363,422 @@ select.form-input {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1rem;
 }
+
+.arch-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.arch-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.arch-view-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.arch-tab {
+  border: 1px solid var(--pet-brown-200);
+  background: white;
+  color: var(--text-secondary);
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.arch-tab:hover {
+  border-color: var(--pet-brown-300);
+  color: var(--text-primary);
+}
+
+.arch-tab.active {
+  background: var(--pet-green-100);
+  border-color: var(--pet-green-300);
+  color: var(--pet-green-600);
+}
+
+.arch-flow-picker {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.arch-flow-btn {
+  border: 1px solid var(--pet-violet-200);
+  background: var(--pet-violet-50);
+  color: var(--text-secondary);
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.arch-flow-btn.active {
+  border-color: var(--pet-salmon-300);
+  background: var(--pet-salmon-100);
+  color: var(--text-primary);
+}
+
+.arch-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1rem;
+}
+
+.arch-diagram-card {
+  padding: 1rem;
+}
+
+.arch-diagram-header h3 {
+  margin-bottom: 0.35rem;
+}
+
+.arch-diagram-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.arch-diagram-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--pet-brown-200);
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.5)),
+    linear-gradient(180deg, #fff, var(--pet-brown-50));
+}
+
+.arch-diagram-canvas {
+  width: 980px;
+  height: 420px;
+  position: relative;
+}
+
+.arch-edges {
+  width: 980px;
+  height: 420px;
+}
+
+.arch-edges marker path {
+  fill: var(--pet-brown-400);
+}
+
+.arch-edge-line {
+  stroke: var(--pet-brown-300);
+  stroke-width: 2;
+  opacity: 0.65;
+  transition: all 0.2s;
+}
+
+.arch-edge-line.dashed {
+  stroke-dasharray: 6 5;
+}
+
+.arch-edge-line.highlighted {
+  stroke: var(--pet-green-500);
+  stroke-width: 2.6;
+  opacity: 1;
+}
+
+.arch-edge-line.selected {
+  stroke: #2563eb;
+  stroke-width: 3;
+  opacity: 1;
+}
+
+.arch-edge-label {
+  font-size: 12px;
+  fill: var(--text-secondary);
+  paint-order: stroke;
+  stroke: white;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.arch-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 144px;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.75rem;
+  border: 2px solid var(--pet-brown-200);
+  background: white;
+  color: var(--text-primary);
+  box-shadow: 0 4px 14px rgba(139, 90, 43, 0.1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.arch-node:hover {
+  transform: translate(-50%, -50%) translateY(-2px);
+  box-shadow: 0 8px 16px rgba(139, 90, 43, 0.14);
+}
+
+.arch-node.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.arch-node.related {
+  border-color: var(--pet-green-400);
+}
+
+.arch-node-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.arch-node-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+.arch-node-port {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.arch-node.cat-client {
+  background: #f8fbff;
+}
+
+.arch-node.cat-gateway {
+  background: #fbfaf4;
+}
+
+.arch-node.cat-service {
+  background: #f7faf5;
+}
+
+.arch-node.cat-datastore {
+  background: #fcf7ef;
+}
+
+.arch-legend {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.7rem 1.2rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.arch-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.arch-legend .chip {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--pet-brown-300);
+}
+
+.arch-legend .chip.client {
+  background: #e7f0ff;
+}
+
+.arch-legend .chip.gateway {
+  background: #faf4e4;
+}
+
+.arch-legend .chip.service {
+  background: #ecf8e6;
+}
+
+.arch-legend .chip.datastore {
+  background: #f7ebd8;
+}
+
+.arch-legend .line {
+  width: 20px;
+  height: 0;
+  border-top: 2px solid var(--pet-brown-400);
+}
+
+.arch-legend .line.dashed {
+  border-top-style: dashed;
+}
+
+.arch-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.arch-detail-head {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.arch-detail-head h3 {
+  margin-bottom: 0.2rem;
+}
+
+.arch-detail-head p {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.arch-detail-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.arch-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.arch-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.2rem;
+}
+
+.arch-cap {
+  text-transform: capitalize;
+}
+
+.arch-io-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+}
+
+.arch-io-list h4 {
+  margin-bottom: 0.35rem;
+}
+
+.arch-io-list p {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+}
+
+.arch-io-item {
+  background: white;
+  border: 1px solid var(--pet-brown-200);
+  border-radius: 0.5rem;
+  font-size: 0.84rem;
+  padding: 0.4rem 0.55rem;
+}
+
+.arch-edge-title {
+  font-weight: 600;
+}
+
+.arch-runtime-card {
+  padding: 1rem;
+}
+
+.arch-runtime-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 0.85rem;
+}
+
+.arch-runtime-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.arch-runtime-controls span {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.arch-step-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.arch-step-item {
+  border: 1px solid var(--pet-brown-200);
+  background: white;
+  border-radius: 0.6rem;
+  text-align: left;
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+}
+
+.arch-step-item.active {
+  border-color: var(--pet-green-300);
+  background: var(--pet-green-50);
+}
+
+.arch-step-item strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.arch-step-item small {
+  color: var(--text-secondary);
+  display: block;
+  margin-top: 0.15rem;
+}
+
+.arch-step-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--pet-green-500);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1200px) {
+  .arch-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .arch-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .arch-runtime-head {
+    align-items: flex-start;
+  }
+
+  .arch-runtime-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

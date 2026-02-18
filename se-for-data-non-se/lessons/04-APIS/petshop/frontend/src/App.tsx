@@ -6,6 +6,10 @@ import ApiExplorer from './pages/ApiExplorer';
 import DatabaseExplorer from './pages/DatabaseExplorer';
 import Architecture from './pages/Architecture';
 import CodeLab from './pages/CodeLab';
+import CodeModels from './pages/CodeModels';
+import CodeCrud from './pages/CodeCrud';
+import CodeActions from './pages/CodeActions';
+import CodeCache from './pages/CodeCache';
 import './styles/pet-theme.css';
 
 export default function App() {
@@ -19,22 +23,12 @@ export default function App() {
           <Route path="database" element={<DatabaseExplorer />} />
           <Route path="architecture" element={<Architecture />} />
           <Route path="codelab" element={<CodeLab />} />
-          <Route path="lessons/:id" element={<LessonPlaceholder />} />
+          <Route path="code/models" element={<CodeModels />} />
+          <Route path="code/crud" element={<CodeCrud />} />
+          <Route path="code/actions" element={<CodeActions />} />
+          <Route path="code/cache" element={<CodeCache />} />
         </Route>
       </Routes>
     </BrowserRouter>
-  );
-}
-
-function LessonPlaceholder() {
-  return (
-    <div className="card">
-      <div className="page-header">
-        <h1 className="page-title">Licao em Desenvolvimento</h1>
-        <p className="page-subtitle">
-          Esta licao ainda esta sendo escrita. Consulte os arquivos markdown em lessons/ para o conteudo.
-        </p>
-      </div>
-    </div>
   );
 }
