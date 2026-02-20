@@ -1,0 +1,59 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+      - executor
+    networks:
+      - cozinhas-net
+
+  api:
+    build: ./api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://cozinhas:cozinhas@db:5432/cozinhas
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - cozinhas-net
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cozinhas
+      POSTGRES_PASSWORD: cozinhas
+      POSTGRES_DB: cozinhas
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - cozinhas-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cozinhas -d cozinhas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - cozinhas-net
+
+  executor:
+    build: ./executor
+    networks:
+      - cozinhas-net
+    read_only: true
+    tmpfs:
+      - /tmp/sandbox:size=10M,mode=1777
+
+networks:
+  cozinhas-net:
+
+volumes:
+  pgdata:

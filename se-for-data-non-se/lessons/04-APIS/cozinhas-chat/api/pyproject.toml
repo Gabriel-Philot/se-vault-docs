@@ -1,0 +1,16 @@
+[project]
+name = "cozinhas-chat-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "sqlmodel>=0.0.22",
+    "asyncpg>=0.30",
+    "redis>=5.2",
+    "pydantic>=2.10",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
