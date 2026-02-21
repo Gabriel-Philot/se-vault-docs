@@ -15,8 +15,10 @@
 | 3.8 | OOP Smells e Anti-Patterns | 20min | Teórico | [ ] |
 | 3.9 | Ponte para M4 (OOP em Dados) | 20min | Teórico | [ ] |
 | 3.10 | Matriz de Decisao de Design Patterns | 30min | Teórico | [ ] |
+| 3.11 | Extra: Patterns Complementares (Adapter, Observer, Pipes) | 35min | Teórico | [x] |
+| 3.12 | SOLID — Voce Ja Sabe (recap formal) | 25min | Teórico | [x] |
 | Prática | Consolidacao M3 + Blueprint M4 | 40min | Hands-on | [ ] |
-| **TOTAL** | | **5h15** | | |
+| **TOTAL** | | **6h15** | | |
 
 ---
 
@@ -264,6 +266,42 @@ Formato:
 Salvar em: studies/se-vault-docs/se-for-data-non-se/samples/03-OPP/pratica.md
 ```
 
+### Mini-Aula 3.11 (Extra): Patterns Complementares para Dados
+**Prompt:**
+```text
+Crie a mini-aula 3.11 (Extra: Patterns Complementares para Engenharia de Dados).
+
+Estrutura em 3 blocos:
+A. Adapter e Facade (Guru): participantes, diagrama, exemplo de vendor externo, Facade para subsistema
+B. Observer/PubSub + Idempotent Consumer: terminologia Publisher/Subscriber, exemplo com EventBus e dedup
+C. Pipes/Filters + Router/Translator/Aggregator: EIP, pipeline multi-canal com teste por etapa
+
+Formato:
+- Maximo 400 linhas
+- Seguir formula didatica do modulo (problema, conceito, exemplo, anti-exemplo, pros/cons, relacoes, conexao com dados)
+- Testes minimos e bloco didatico com checkpoint + aplicacao imediata
+
+Salvar em: studies/se-vault-docs/se-for-data-non-se/samples/03-OPP/11_extra_patterns_dados.md
+```
+
+### Mini-Aula 3.12: SOLID — Voce Ja Sabe (recap formal)
+**Prompt:**
+```text
+Crie a mini-aula 3.12 (SOLID — Voce Ja Sabe).
+
+Abordagem: recap formal — o aluno ja praticou todos os principios ao longo do modulo 3.
+Para cada principio (SRP, OCP, LSP, ISP, DIP):
+1. Citacao original do autor
+2. "Onde voce ja aprendeu" — referencia cruzada com aulas anteriores
+3. Exemplo antes/depois em Python
+4. Conexao com dados
+
+Incluir secao final de YAGNI (quando SOLID e overengineering).
+Bloco didatico com 5 perguntas de checkpoint (1 por principio).
+
+Salvar em: studies/se-vault-docs/se-for-data-non-se/samples/03-OPP/12_solid_voce_ja_sabe.md
+```
+
 ---
 
 ## ✅ Checklist de Criação
@@ -279,4 +317,6 @@ Salvar em: studies/se-vault-docs/se-for-data-non-se/samples/03-OPP/pratica.md
 - [ ] 3.8 - OOP Smells
 - [ ] 3.9 - Ponte para M4
 - [ ] 3.10 - Matriz de Decisao de Design Patterns
+- [x] 3.11 - Extra: Patterns Complementares (Adapter, Observer, Pipes)
+- [x] 3.12 - SOLID — Voce Ja Sabe (recap formal)
 - [ ] Prática
