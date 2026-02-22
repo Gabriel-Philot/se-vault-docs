@@ -192,18 +192,17 @@ export function ArchitecturePage() {
         </div>
       </PageTitleBlock>
 
-      <section className="relative overflow-hidden rounded-2xl border border-pal-gold/10">
-        <img src={assets.ui.architectureBg} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-28" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/55" />
-        <div className="relative p-4">
-          <div className="relative min-h-[640px] overflow-hidden rounded-2xl border border-pal-gold/10 bg-black/20">
+      <section className="relative overflow-hidden rounded-2xl border border-pal-gold/10 bg-gradient-to-b from-black/35 via-black/20 to-black/40">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_38%,rgba(232,178,58,0.05),transparent_44%),radial-gradient(circle_at_78%_18%,rgba(56,189,248,0.04),transparent_40%)]" />
+        <div className="relative p-3">
+          <div className="relative min-h-[660px] overflow-hidden rounded-2xl border border-pal-gold/10 bg-black/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.02),0_18px_40px_rgba(0,0,0,0.28)]">
             <img
               src={assets.ui.architectureBg}
               alt=""
               aria-hidden="true"
-              className="absolute inset-0 h-full w-full object-cover object-[center_35%] opacity-55"
+              className="absolute inset-0 h-full w-full object-cover object-[center_35%] opacity-62"
             />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_40%,rgba(232,178,58,0.16),transparent_46%),radial-gradient(circle_at_76%_20%,rgba(56,189,248,0.12),transparent_40%),linear-gradient(to_bottom,rgba(0,0,0,0.16),rgba(0,0,0,0.58))]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_40%,rgba(232,178,58,0.12),transparent_46%),radial-gradient(circle_at_76%_20%,rgba(56,189,248,0.08),transparent_40%),linear-gradient(to_bottom,rgba(0,0,0,0.10),rgba(0,0,0,0.50))]" />
 
             {diagram ? (
               <>
@@ -256,56 +255,71 @@ export function ArchitecturePage() {
                         className="absolute"
                         style={{ left: `${node.x_pct ?? 0}%`, top: `${node.y_pct ?? 0}%`, width: `${widthPct}%` }}
                       >
-                        <div
-                          className={[
-                            "relative overflow-hidden rounded-xl border bg-black/35 backdrop-blur-sm transition-all duration-300",
-                            tone.border,
-                            isActive
-                              ? `${tone.glow} ring-1 ring-white/15 animate-pulse`
-                              : isCompleted
-                                ? "shadow-[0_0_20px_rgba(255,255,255,0.05)]"
-                                : "shadow-[0_10px_40px_rgba(0,0,0,0.28)]"
-                          ].join(" ")}
-                        >
-                          {renderMode === "emblem" ? (
-                            <div className="relative h-20 w-full overflow-hidden">
-                              <div className="absolute inset-0 opacity-35">
-                                <img src={assets.ui.parchmentTexture} alt="" aria-hidden="true" className="h-full w-full object-cover" />
-                              </div>
-                              <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/15 via-black/20 to-sky-400/15" />
-                              <div className="relative flex h-full items-center justify-center gap-2">
-                                {imagePath ? <img src={imagePath} alt="" aria-hidden="true" className="h-9 w-9 rounded-lg bg-black/30 p-1" /> : null}
-                                <div className="rounded-md border border-emerald-300/20 bg-black/25 px-2 py-1 text-[10px] uppercase tracking-wider text-emerald-100">
-                                  App Core
-                                </div>
-                              </div>
+                        <div className="relative">
+                          <div
+                            className={[
+                              "relative flex min-h-[88px] items-center justify-center transition-all duration-300",
+                              isActive
+                                ? `${tone.glow}`
+                                : isCompleted
+                                  ? "shadow-[0_0_20px_rgba(255,255,255,0.03)]"
+                                  : ""
+                            ].join(" ")}
+                          >
+                            <div
+                              className={[
+                                "relative grid h-20 w-20 place-items-center overflow-hidden rounded-full border bg-black/30 shadow-[0_12px_28px_rgba(0,0,0,0.28)]",
+                                tone.border,
+                                isActive ? "ring-2 ring-white/10" : isCompleted ? "ring-1 ring-white/5" : ""
+                              ].join(" ")}
+                            >
+                              {renderMode === "emblem" ? (
+                                <>
+                                  <div className="absolute inset-0 opacity-30">
+                                    <img src={assets.ui.parchmentTexture} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+                                  </div>
+                                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/18 via-black/25 to-sky-400/14" />
+                                  {imagePath ? <img src={imagePath} alt="" aria-hidden="true" className="relative z-10 h-10 w-10 rounded-full bg-black/35 p-1" /> : null}
+                                </>
+                              ) : (
+                                <>
+                                  {imagePath ? <img src={imagePath} alt="" aria-hidden="true" className="h-full w-full object-cover object-center opacity-92" /> : <div className="h-full w-full bg-black/20" />}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />
+                                </>
+                              )}
                             </div>
-                          ) : (
-                            <>
-                              {imagePath ? <img src={imagePath} alt="" aria-hidden="true" className="h-20 w-full object-cover opacity-80" /> : <div className="h-20 w-full bg-black/20" />}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                            </>
-                          )}
 
-                          <div className="absolute inset-x-2 bottom-2">
-                            <div className={`rounded-md border bg-black/40 px-2 py-1 text-[11px] leading-tight backdrop-blur-sm ${tone.border} ${tone.text}`}>
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="font-semibold">{node.label}</div>
-                                {node.port ? (
-                                  <span className="rounded-full border border-white/10 bg-black/20 px-1.5 py-0.5 text-[9px] text-pal-text/85">
-                                    {node.port}
-                                  </span>
-                                ) : null}
+                            {node.id === "worker" && accentPath ? (
+                              <div className="absolute left-1/2 top-0 -translate-y-1/3 translate-x-4 rounded border border-pal-gold/15 bg-black/30 p-0.5">
+                                <img src={accentPath} alt="" aria-hidden="true" className="h-4 w-6 rounded object-cover opacity-85" />
                               </div>
-                              {node.sublabel ? <div className="text-[10px] opacity-80">{node.sublabel}</div> : null}
-                            </div>
+                            ) : null}
+
+                            {renderMode === "emblem" ? (
+                              <div className="absolute left-1/2 top-1/2 ml-14 -translate-y-1/2 rounded-md border border-emerald-300/20 bg-black/35 px-2 py-1 text-[10px] uppercase tracking-wider text-emerald-100">
+                                App Core
+                              </div>
+                            ) : null}
                           </div>
 
-                          {node.id === "worker" && accentPath ? (
-                            <div className="absolute right-1 top-1 rounded border border-pal-gold/15 bg-black/30 p-0.5 backdrop-blur-sm">
-                              <img src={accentPath} alt="" aria-hidden="true" className="h-5 w-8 rounded object-cover opacity-85" />
+                          <div
+                            className={[
+                              "mt-1.5 rounded-md border px-2 py-1 text-[11px] leading-tight transition-all duration-300",
+                              "bg-black/55",
+                              tone.border,
+                              isActive ? `${tone.text} ${tone.glow}` : isCompleted ? "text-pal-text" : "text-pal-text/95"
+                            ].join(" ")}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="font-semibold">{node.label}</div>
+                              {node.port ? (
+                                <span className="rounded-full border border-white/10 bg-black/25 px-1.5 py-0.5 text-[9px] text-pal-text/85">
+                                  {node.port}
+                                </span>
+                              ) : null}
                             </div>
-                          ) : null}
+                            {node.sublabel ? <div className="text-[10px] opacity-80">{node.sublabel}</div> : null}
+                          </div>
                         </div>
                       </div>
                     );
