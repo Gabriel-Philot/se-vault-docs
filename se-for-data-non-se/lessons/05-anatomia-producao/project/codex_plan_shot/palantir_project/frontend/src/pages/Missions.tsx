@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { PageCard } from "../components/shared/PageCard";
+import { PageTitleBlock } from "../components/shared/PageTitleBlock";
 import { usePollingResource } from "../hooks/usePollingResource";
 import { api } from "../lib/api";
 import { assets } from "../lib/assets";
@@ -38,6 +39,34 @@ export function MissionsPage() {
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
 
   const traces = usePollingResource(() => api.missions.traces(12).then((r) => r.data), 1600);
+  const missionFeed = usePollingResource(() => api.missions.list().then((r) => r.data), 1200);
+
+  useEffect(() => {
+    const feedMissions = (missionFeed.data?.missions ?? []) as TrackedMission[];
+    if (!feedMissions.length) return;
+    setMissions((prev) => {
+      const merged = new Map<string, TrackedMission>();
+      for (const mission of prev) merged.set(mission.id, mission);
+      for (const mission of feedMissions) merged.set(mission.id, mission);
+      const next = Array.from(merged.values())
+        .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))
+        .slice(0, 16);
+
+      const same =
+        next.length === prev.length &&
+        next.every((m, idx) => {
+          const p = prev[idx];
+          return (
+            p &&
+            p.id === m.id &&
+            p.status === m.status &&
+            p.progress_pct === m.progress_pct &&
+            p.phase_ui === m.phase_ui
+          );
+        });
+      return same ? prev : next;
+    });
+  }, [missionFeed.data]);
 
   useEffect(() => {
     if (!traces.data?.traces?.length) return;
@@ -49,30 +78,20 @@ export function MissionsPage() {
     if (!stillExists) setSelectedTraceId(traces.data.traces[0].mission_id);
   }, [selectedTraceId, traces.data]);
 
-  useEffect(() => {
-    if (missions.length === 0) return;
-    const hasActive = missions.some((m) => !["SUCCESS", "FAILURE"].includes(m.status));
-    if (!hasActive) return;
-
-    const timer = window.setInterval(async () => {
-      try {
-        const refreshed = await Promise.all(
-          missions.map(async (mission) => {
-            if (["SUCCESS", "FAILURE"].includes(mission.status)) return mission;
-            const res = await api.missions.get(mission.id);
-            return res.data as TrackedMission;
-          })
-        );
-        setMissions(refreshed);
-      } catch {
-        // keep UI steady on polling failures
-      }
-    }, 900);
-
-    return () => window.clearInterval(timer);
+  const activeMissions = useMemo(
+    () => missions.filter((m) => !["SUCCESS", "FAILURE"].includes(m.status)),
+    [missions]
+  );
+  const displayMissions = useMemo(() => {
+    const ranked = [...missions].sort((a, b) => {
+      const aActive = !["SUCCESS", "FAILURE"].includes(a.status) ? 1 : 0;
+      const bActive = !["SUCCESS", "FAILURE"].includes(b.status) ? 1 : 0;
+      if (aActive !== bActive) return bActive - aActive;
+      return String(b.updated_at ?? b.created_at ?? "").localeCompare(String(a.updated_at ?? a.created_at ?? ""));
+    });
+    return ranked.slice(0, 6);
   }, [missions]);
-
-  const activeCount = missions.filter((m) => !["SUCCESS", "FAILURE"].includes(m.status)).length;
+  const activeCount = activeMissions.length;
   const selectedTrace = traces.data?.traces.find((trace) => trace.mission_id === selectedTraceId) ?? traces.data?.traces?.[0] ?? null;
 
   const latestTerminalLines = useMemo(() => {
@@ -105,13 +124,12 @@ export function MissionsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="px-1">
-        <p className="text-xs uppercase tracking-[0.25em] text-pal-gold/80">Command Theater</p>
-        <h1 className="mt-1 text-3xl font-semibold text-pal-gold">Missoes</h1>
-        <p className="mt-1 text-sm text-pal-text/80">
-          Dispare missões, acompanhe heróis/workers e veja a cadeia de execução em formato de terminal.
-        </p>
-      </div>
+      <PageTitleBlock
+        eyebrow="Command Theater"
+        title="Missoes"
+        subtitle="Dispare missões, acompanhe heróis/workers e veja a cadeia de execução em formato de terminal."
+        accent="gold"
+      />
 
       <section className="relative overflow-hidden rounded-2xl border border-pal-gold/10">
         <img src={assets.ui.missionsBg} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-30" />
@@ -155,13 +173,23 @@ export function MissionsPage() {
 
           <div className="space-y-3">
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {missions.length === 0 ? (
+              {displayMissions.length === 0 ? (
                 <div className="rounded-xl border border-pal-gold/10 bg-black/20 p-4 text-sm text-pal-muted md:col-span-2 xl:col-span-3">
                   Nenhuma missão ativa ainda. Lance uma missão para ver heróis, fases e progresso no mapa e no terminal.
                 </div>
               ) : (
-                missions.slice(0, 6).map((mission) => (
-                  <div key={mission.id} className="relative overflow-hidden rounded-xl border border-pal-gold/10 bg-black/20 p-3 backdrop-blur-sm">
+                displayMissions.map((mission) => {
+                  const isTerminal = ["SUCCESS", "FAILURE"].includes(mission.status);
+                  return (
+                  <div
+                    key={mission.id}
+                    className={[
+                      "relative overflow-hidden rounded-xl p-3 backdrop-blur-sm",
+                      isTerminal
+                        ? "border border-pal-green/15 bg-black/15 opacity-85"
+                        : "border border-pal-gold/10 bg-black/20"
+                    ].join(" ")}
+                  >
                     <div className="absolute inset-0 opacity-20">
                       <img src={heroAvatar(mission.hero_key, mission.hero_avatar_key)} alt="" aria-hidden="true" className="h-full w-full object-cover" />
                     </div>
@@ -194,7 +222,7 @@ export function MissionsPage() {
                       </div>
                     </div>
                   </div>
-                ))
+                )})
               )}
             </div>
           </div>
@@ -301,4 +329,3 @@ export function MissionsPage() {
     </div>
   );
 }
-

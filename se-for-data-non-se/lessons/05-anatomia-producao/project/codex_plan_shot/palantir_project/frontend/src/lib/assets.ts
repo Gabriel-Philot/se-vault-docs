@@ -16,7 +16,8 @@ export const assets = {
     erebor: "/images/locations/erebor.png",
     gondorBeacons: "/images/locations/gondor-beacons.png",
     minasTirithDb: "/images/locations/minas-tirith-db.png",
-    eagles: "/images/locations/eagles.png"
+    eagles: "/images/locations/eagles.png",
+    tavern: "/images/locations/tavern.png"
   },
   heroes: {
     aragorn: "/images/heroes/aragorn.png",

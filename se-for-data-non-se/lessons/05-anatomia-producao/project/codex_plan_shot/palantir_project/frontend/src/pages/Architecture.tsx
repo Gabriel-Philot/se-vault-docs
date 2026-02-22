@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { PageCard } from "../components/shared/PageCard";
+import { PageTitleBlock } from "../components/shared/PageTitleBlock";
 import { api } from "../lib/api";
 import { assets } from "../lib/assets";
 import type { DiagramEnvelope, TraceEnvelope } from "../lib/types";
@@ -173,13 +174,13 @@ export function ArchitecturePage() {
 
   return (
     <div className="space-y-5">
-      <div className="px-1">
-        <p className="text-xs uppercase tracking-[0.25em] text-pal-gold/80">Command Map</p>
-        <h1 className="mt-1 text-3xl font-semibold text-pal-gold">Arquitetura</h1>
-        <p className="mt-1 text-sm text-pal-text/85">
-          Diagrama de fluxo e replay do request. Cada etapa acende nós e arestas para mostrar o caminho do sistema.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+      <PageTitleBlock
+        eyebrow="Command Map"
+        title="Arquitetura"
+        subtitle="Diagrama de fluxo e replay do request. Cada etapa acende nós e arestas para mostrar o caminho do sistema."
+        accent="gold"
+      >
+        <div className="flex flex-wrap gap-2 text-xs">
           {legend.map(([key, label, tone]) => (
             <span
               key={key}
@@ -189,7 +190,7 @@ export function ArchitecturePage() {
             </span>
           ))}
         </div>
-      </div>
+      </PageTitleBlock>
 
       <section className="relative overflow-hidden rounded-2xl border border-pal-gold/10">
         <img src={assets.ui.architectureBg} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-28" />
@@ -477,6 +478,30 @@ export function ArchitecturePage() {
         )}
       </PageCard>
 
+      <PageCard>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-[0.2em] text-pal-gold/70">Infra Health</div>
+            <div className="text-sm text-pal-muted">Visão rápida dos serviços da arquitetura para suporte ao trace.</div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["nginx", "up"],
+              ["gunicorn", "up"],
+              ["fastapi", "up"],
+              ["redis", "up"],
+              ["postgres", "up"],
+              ["broker", "up"],
+              ["worker", "up"]
+            ].map(([service, status]) => (
+              <span key={service} className="rounded-full border border-emerald-300/25 bg-emerald-400/5 px-3 py-1 text-xs text-emerald-200">
+                {service}: {status}
+              </span>
+            ))}
+          </div>
+        </div>
+      </PageCard>
+
       {diagram ? (
         <div className="grid gap-3 md:grid-cols-2">
           <PageCard>
@@ -524,4 +549,3 @@ export function ArchitecturePage() {
     </div>
   );
 }
-

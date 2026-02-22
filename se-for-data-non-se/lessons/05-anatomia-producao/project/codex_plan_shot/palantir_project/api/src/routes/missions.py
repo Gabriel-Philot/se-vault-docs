@@ -1,19 +1,25 @@
 import asyncio
+import json
 import random
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import redis
 from fastapi import APIRouter, HTTPException, status
 
 from . import library as library_routes
 from .. import database
+from ..config import settings
 from ..services import telemetry as telemetry_service
 
 router = APIRouter(prefix="/api/missions", tags=["missions"])
 
 _MISSIONS: dict[str, dict] = {}
+_redis_client: redis.Redis | None = None
+_REDIS_MISSIONS_HASH = "missions:runtime:state"
+_LOCAL_EMIT_MARKERS: set[str] = set()
 _HERO_ROTATION = {"recon": 0, "consult": 0, "raven": 0}
 _HERO_POOLS = {
     "recon": ["aragorn", "legolas", "faramir"],
@@ -46,6 +52,63 @@ def _now() -> str:
 
 def _envelope(data: dict) -> dict:
     return {"data": data, "meta": {"timestamp": _now(), "source": "missions"}}
+
+
+def _mission_redis() -> redis.Redis:
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = redis.Redis.from_url(
+            settings.redis_url,
+            decode_responses=True,
+            socket_timeout=0.25,
+            socket_connect_timeout=0.25,
+        )
+    return _redis_client
+
+
+def _save_shared_mission(mission: dict) -> None:
+    try:
+        _mission_redis().hset(_REDIS_MISSIONS_HASH, mission["id"], json.dumps(mission))
+    except Exception:
+        pass
+
+
+def _load_shared_mission(mission_id: str) -> dict | None:
+    try:
+        raw = _mission_redis().hget(_REDIS_MISSIONS_HASH, mission_id)
+        if not raw:
+            return None
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def _load_all_shared_missions() -> list[dict]:
+    try:
+        rows = _mission_redis().hgetall(_REDIS_MISSIONS_HASH)
+    except Exception:
+        return []
+    missions: list[dict] = []
+    for raw in rows.values():
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict) and parsed.get("id"):
+                missions.append(parsed)
+        except Exception:
+            continue
+    return missions
+
+
+def _emit_once(mission_id: str, marker: str, ttl_seconds: int = 60 * 60 * 24) -> bool:
+    token = f"{mission_id}:{marker}"
+    try:
+        return bool(_mission_redis().set(f"missions:emit-once:{token}", "1", nx=True, ex=ttl_seconds))
+    except Exception:
+        if token in _LOCAL_EMIT_MARKERS:
+            return False
+        _LOCAL_EMIT_MARKERS.add(token)
+        return True
 
 
 def _choose_hero(mission_type: str) -> tuple[str, str]:
@@ -102,7 +165,7 @@ def _persist_mission_snapshot(mission: dict) -> None:
 def _new_mission(mission_type: str) -> dict:
     hero_key, hero_display = _choose_hero(mission_type)
     hero_snapshot = library_routes.get_hero_snapshot(hero_key) or {}
-    execution_duration_s = round(random.uniform(2.0, 4.0), 2)
+    execution_duration_s = round(random.uniform(4.0, 8.0), 2)
     queue_delay_s = round(random.uniform(0.12, 0.28), 2)
     persist_delay_s = round(random.uniform(0.10, 0.22), 2)
     score_delay_s = round(random.uniform(0.05, 0.14), 2)
@@ -119,6 +182,7 @@ def _new_mission(mission_type: str) -> dict:
         "persist_delay_s": persist_delay_s,
         "score_delay_s": score_delay_s,
         "started_monotonic": time.monotonic(),
+        "started_wall_epoch": time.time(),
         "should_retry": should_retry,
         "phase_ui": "INVOKED",
         "hero_key": hero_key,
@@ -142,6 +206,7 @@ def _new_mission(mission_type: str) -> dict:
         "score_applied": False,
     }
     _MISSIONS[mission_id] = mission
+    _save_shared_mission(mission)
     _persist_mission_snapshot(mission)
     telemetry_service.record_event(
         kind=f"mission.{mission_type}",
@@ -161,11 +226,25 @@ def _new_mission(mission_type: str) -> dict:
         entity_id=mission_id,
         payload=_mission_payload(mission, phase_ui="QUEUED"),
     )
+    _save_shared_mission(mission)
     return mission
 
 
 def _refresh_mission(mission: dict) -> dict:
-    elapsed = time.monotonic() - mission["started_monotonic"]
+    if (
+        mission.get("status") == "SUCCESS"
+        and int(mission.get("progress_pct", 0)) >= 100
+        and mission.get("terminal_event_emitted")
+        and mission.get("persisted_event_emitted")
+        and mission.get("scored_event_emitted")
+    ):
+        return mission
+
+    started_wall_epoch = mission.get("started_wall_epoch")
+    if started_wall_epoch is not None:
+        elapsed = max(0.0, time.time() - float(started_wall_epoch))
+    else:
+        elapsed = time.monotonic() - mission["started_monotonic"]
     queue_end = mission["queue_delay_s"]
     exec_end = queue_end + mission["execution_duration_s"]
     persist_end = exec_end + mission["persist_delay_s"]
@@ -200,6 +279,7 @@ def _refresh_mission(mission: dict) -> dict:
     mission["progress_pct"] = progress
     mission["phase_ui"] = phase_ui
     mission["updated_at"] = _now()
+    _save_shared_mission(mission)
     _persist_mission_snapshot(mission)
 
     step_states = ["pending", "pending", "pending", "pending"]
@@ -219,89 +299,95 @@ def _refresh_mission(mission: dict) -> dict:
 
     if phase_ui == "EXECUTING" and not mission.get("executing_event_emitted"):
         mission["executing_event_emitted"] = True
-        telemetry_service.record_event(
-            kind=f"mission.{mission['mission_type']}",
-            stage="mission_executing",
-            service="celery",
-            status="warn" if status_value == "RETRY" else "info",
-            label=f"Hero executing: {mission['hero_display_name']}",
-            entity_id=mission["id"],
-            payload=_mission_payload(mission, phase_ui="EXECUTING"),
-        )
+        if _emit_once(mission["id"], "mission_executing"):
+            telemetry_service.record_event(
+                kind=f"mission.{mission['mission_type']}",
+                stage="mission_executing",
+                service="celery",
+                status="warn" if status_value == "RETRY" else "info",
+                label=f"Hero executing: {mission['hero_display_name']}",
+                entity_id=mission["id"],
+                payload=_mission_payload(mission, phase_ui="EXECUTING"),
+            )
 
     bucket = min(100, (progress // 20) * 20)
     if phase_ui == "EXECUTING" and bucket > mission.get("last_emitted_bucket", -1):
         mission["last_emitted_bucket"] = bucket
-        telemetry_service.record_event(
-            kind=f"mission.{mission['mission_type']}",
-            stage="mission_progress",
-            service="celery",
-            status="warn" if status_value == "RETRY" else "info",
-            label=f"Mission {mission['mission_type']} {progress}%",
-            entity_id=mission["id"],
-            payload=_mission_payload(mission, progress_pct=progress, status=status_value, phase_ui="EXECUTING"),
-        )
+        if _emit_once(mission["id"], f"mission_progress_{bucket}"):
+            telemetry_service.record_event(
+                kind=f"mission.{mission['mission_type']}",
+                stage="mission_progress",
+                service="celery",
+                status="warn" if status_value == "RETRY" else "info",
+                label=f"Mission {mission['mission_type']} {progress}%",
+                entity_id=mission["id"],
+                payload=_mission_payload(mission, progress_pct=progress, status=status_value, phase_ui="EXECUTING"),
+            )
 
     if phase_ui == "COMPLETED" and not mission.get("terminal_event_emitted"):
         mission["terminal_event_emitted"] = True
-        telemetry_service.record_event(
-            kind=f"mission.{mission['mission_type']}",
-            stage="mission_completed",
-            service="celery",
-            status="success",
-            label=f"Mission completed: {mission['mission_type']} ({mission['hero_display_name']})",
-            entity_id=mission["id"],
-            payload=_mission_payload(mission, phase_ui="COMPLETED"),
-        )
+        if _emit_once(mission["id"], "mission_completed"):
+            telemetry_service.record_event(
+                kind=f"mission.{mission['mission_type']}",
+                stage="mission_completed",
+                service="celery",
+                status="success",
+                label=f"Mission completed: {mission['mission_type']} ({mission['hero_display_name']})",
+                entity_id=mission["id"],
+                payload=_mission_payload(mission, phase_ui="COMPLETED"),
+            )
 
     if phase_ui in {"PERSISTED", "SCORED"} and not mission.get("persisted_event_emitted"):
         mission["persisted_event_emitted"] = True
-        telemetry_service.record_event(
-            kind=f"mission.{mission['mission_type']}",
-            stage="mission_persisted",
-            service="postgres",
-            status="success",
-            label=f"Mission result persisted: {mission['mission_type']}",
-            entity_id=mission["id"],
-            payload=_mission_payload(mission, phase_ui="PERSISTED"),
-        )
+        if _emit_once(mission["id"], "mission_persisted"):
+            telemetry_service.record_event(
+                kind=f"mission.{mission['mission_type']}",
+                stage="mission_persisted",
+                service="postgres",
+                status="success",
+                label=f"Mission result persisted: {mission['mission_type']}",
+                entity_id=mission["id"],
+                payload=_mission_payload(mission, phase_ui="PERSISTED"),
+            )
 
     if phase_ui == "SCORED" and not mission.get("scored_event_emitted"):
         mission["scored_event_emitted"] = True
-        if not mission.get("score_applied"):
+        if not mission.get("score_applied") and _emit_once(mission["id"], "score_apply"):
             mission["score_applied"] = True
             hero_after = library_routes.award_hero_points(mission["hero_key"], int(mission["points_awarded"]))
             mission["hero_new_score"] = hero_after["score"]
-        telemetry_service.record_event(
-            kind=f"mission.{mission['mission_type']}",
-            stage="hero_scored",
-            service="postgres",
-            status="success",
-            label=f"Hero scored +{mission['points_awarded']}: {mission['hero_display_name']}",
-            entity_id=mission["hero_key"],
-            payload=_mission_payload(
-                mission,
-                phase_ui="SCORED",
-                points_awarded=mission["points_awarded"],
-                new_score=mission.get("hero_new_score"),
-                source_mission_id=mission["id"],
-            ),
-        )
-        telemetry_service.record_event(
-            kind="library.hero.mission_reward",
-            stage="leaderboard_update",
-            service="fastapi",
-            status="info",
-            label=f"Leaderboard updated for {mission['hero_display_name']}",
-            entity_id=mission["hero_key"],
-            payload=_mission_payload(
-                mission,
-                phase_ui="SCORED",
-                points_awarded=mission["points_awarded"],
-                new_score=mission.get("hero_new_score"),
-                source_mission_id=mission["id"],
-            ),
-        )
+        if _emit_once(mission["id"], "hero_scored"):
+            telemetry_service.record_event(
+                kind=f"mission.{mission['mission_type']}",
+                stage="hero_scored",
+                service="postgres",
+                status="success",
+                label=f"Hero scored +{mission['points_awarded']}: {mission['hero_display_name']}",
+                entity_id=mission["hero_key"],
+                payload=_mission_payload(
+                    mission,
+                    phase_ui="SCORED",
+                    points_awarded=mission["points_awarded"],
+                    new_score=mission.get("hero_new_score"),
+                    source_mission_id=mission["id"],
+                ),
+            )
+        if _emit_once(mission["id"], "leaderboard_update"):
+            telemetry_service.record_event(
+                kind="library.hero.mission_reward",
+                stage="leaderboard_update",
+                service="fastapi",
+                status="info",
+                label=f"Leaderboard updated for {mission['hero_display_name']}",
+                entity_id=mission["hero_key"],
+                payload=_mission_payload(
+                    mission,
+                    phase_ui="SCORED",
+                    points_awarded=mission["points_awarded"],
+                    new_score=mission.get("hero_new_score"),
+                    source_mission_id=mission["id"],
+                ),
+            )
 
     return mission
 
@@ -451,6 +537,10 @@ async def list_mission_traces(limit: int = 12) -> dict:
 @router.get("/{mission_id}")
 async def get_mission(mission_id: str) -> dict:
     mission = _MISSIONS.get(mission_id)
+    if mission is None:
+        mission = _load_shared_mission(mission_id)
+        if mission is not None:
+            _MISSIONS[mission_id] = mission
     if not mission:
         raise HTTPException(status_code=404, detail="Mission not found")
     return _envelope(_refresh_mission(mission))
@@ -458,6 +548,9 @@ async def get_mission(mission_id: str) -> dict:
 
 @router.get("")
 async def list_missions(limit: int = 20) -> dict:
+    for mission in _load_all_shared_missions():
+        if mission.get("id"):
+            _MISSIONS[str(mission["id"])] = mission
     missions = [_refresh_mission(m) for m in _MISSIONS.values()]
     missions.sort(key=lambda item: item["created_at"], reverse=True)
     missions = missions[: max(1, min(limit, 100))]

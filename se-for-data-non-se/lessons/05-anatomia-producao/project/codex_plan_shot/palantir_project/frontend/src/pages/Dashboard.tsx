@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { PageCard } from "../components/shared/PageCard";
+import { PageTitleBlock } from "../components/shared/PageTitleBlock";
 import { usePollingResource } from "../hooks/usePollingResource";
 import { api } from "../lib/api";
 import { assets } from "../lib/assets";
@@ -46,6 +48,32 @@ const MAP_MARKERS = [
   { key: "m4", x: "73%", y: "56%" },
   { key: "m5", x: "46%", y: "67%" }
 ] as const;
+
+const HERO_SIGILS: Record<string, string> = {
+  aragorn: "AR",
+  legolas: "LE",
+  gandalf: "GD",
+  galadriel: "GL",
+  faramir: "FA",
+  samwise: "SA",
+  boromir: "BO",
+  eowyn: "EO",
+  frodo: "FR",
+  eagles: "EA",
+};
+
+function heroSigil(heroKey: string | null | undefined) {
+  if (!heroKey) return "--";
+  return HERO_SIGILS[heroKey] ?? heroKey.slice(0, 2).toUpperCase();
+}
+
+function heroSlotAvatar(heroKey: string) {
+  if (heroKey in assets.heroes) {
+    return (assets.heroes as Record<string, string>)[heroKey];
+  }
+  if (heroKey === "eagles") return assets.locations.eagles;
+  return null;
+}
 
 function formatAgo(value?: string | null) {
   if (!value) return "never";
@@ -225,6 +253,51 @@ function formatTimelineLabel(evt: TelemetryEvent): string {
   return evt.label;
 }
 
+function dashboardPanelSkin(kind: "log" | "missions" | "library" | "summary") {
+  switch (kind) {
+    case "log":
+      return {
+        wrap: "relative overflow-hidden rounded-2xl border border-pal-gold/[0.04] bg-black/22 backdrop-blur-md shadow-[0_14px_34px_rgba(0,0,0,0.22),inset_0_0_0_1px_rgba(0,0,0,0.16)]",
+        overlays: (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.015),transparent_24%),radial-gradient(circle_at_14%_18%,rgba(232,178,58,0.05),transparent_36%)]" />
+            <div className="pointer-events-none absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,rgba(255,255,255,0.16)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:18px_18px]" />
+          </>
+        )
+      };
+    case "missions":
+      return {
+        wrap: "relative overflow-hidden rounded-2xl border border-pal-gold/[0.045] bg-black/20 backdrop-blur-md shadow-[0_14px_34px_rgba(0,0,0,0.22),inset_0_0_0_1px_rgba(0,0,0,0.14)]",
+        overlays: (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_14%,rgba(232,178,58,0.09),transparent_42%),radial-gradient(circle_at_88%_80%,rgba(251,191,36,0.03),transparent_36%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-pal-gold/22 to-transparent" />
+          </>
+        )
+      };
+    case "library":
+      return {
+        wrap: "relative overflow-hidden rounded-2xl border border-pal-blue/[0.05] bg-black/20 backdrop-blur-md shadow-[0_14px_34px_rgba(0,0,0,0.22),inset_0_0_0_1px_rgba(0,0,0,0.14)]",
+        overlays: (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_14%,rgba(56,189,248,0.06),transparent_40%),radial-gradient(circle_at_86%_82%,rgba(16,185,129,0.05),transparent_38%)]" />
+            <div className="pointer-events-none absolute inset-0 opacity-[0.045] [background-image:linear-gradient(to_right,rgba(125,211,252,0.18)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.12)_1px,transparent_1px)] [background-size:22px_22px]" />
+          </>
+        )
+      };
+    case "summary":
+    default:
+      return {
+        wrap: "relative overflow-hidden rounded-2xl border border-white/[0.025] bg-black/18 backdrop-blur-md shadow-[0_14px_34px_rgba(0,0,0,0.22),inset_0_0_0_1px_rgba(0,0,0,0.14)]",
+        overlays: (
+          <>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_12%,rgba(255,255,255,0.02),transparent_34%),linear-gradient(to_bottom,rgba(255,255,255,0.012),transparent_28%)]" />
+          </>
+        )
+      };
+  }
+}
+
 export function DashboardPage() {
   const overview = usePollingResource(() => api.telemetry.overview().then((r) => r.data), 1500);
   const feed = usePollingResource(() => api.telemetry.feed(50).then((r) => r.data), 1200);
@@ -275,51 +348,139 @@ export function DashboardPage() {
   const timelineEvents = events.slice(0, 10);
   const missionWidget = deriveMissionWidgetView(latestMissionEvent, widgetPulse.missions.label);
   const libraryWidget = deriveLibraryWidgetView(latestLibraryEvent, latestScoreEvent, widgetPulse.library.label, counts);
-  const activeHeroSlotKey = missionWidget.heroKey ? missionWidget.heroKey.slice(0, 2).toUpperCase() : null;
+  const activeHeroSlotKey = missionWidget.heroKey ? heroSigil(missionWidget.heroKey) : null;
+  const activeHeroSlotKeys = useMemo(() => {
+    const latestByMission = new Map<string, TelemetryEvent>();
+    for (const evt of events) {
+      if (!evt.kind.startsWith("mission")) continue;
+      const missionId = typeof evt.payload?.mission_id === "string" ? evt.payload.mission_id : (evt.entity_id ?? "");
+      if (!missionId || latestByMission.has(missionId)) continue;
+      latestByMission.set(missionId, evt);
+    }
+
+    const activeStages = new Set([
+      "mission_invoked",
+      "mission_queued",
+      "mission_executing",
+      "mission_progress",
+      "mission_started",
+      "queued",
+      "batch_started",
+    ]);
+    const terminalStages = new Set(["mission_completed", "mission_persisted", "hero_scored", "leaderboard_update", "mission_failed"]);
+
+    const slots = new Set<string>();
+    for (const evt of latestByMission.values()) {
+      const heroKey = typeof evt.payload?.hero_key === "string" ? evt.payload.hero_key : null;
+      if (!heroKey) continue;
+      const slot = heroSigil(heroKey);
+      const age = eventAgeMs(evt);
+      if (activeStages.has(evt.stage) && age < 20000) {
+        slots.add(slot);
+        continue;
+      }
+      if (terminalStages.has(evt.stage) && age < 5000) {
+        slots.add(slot);
+      }
+    }
+    return slots;
+  }, [events]);
+  const logSkin = dashboardPanelSkin("log");
+  const missionsSkin = dashboardPanelSkin("missions");
+  const librarySkin = dashboardPanelSkin("library");
+  const summarySkin = dashboardPanelSkin("summary");
+  const timelineAnimationKey = `${timelineEvents[0]?.id ?? "empty"}-${timelineEvents.length}`;
+  const heroSlots = useMemo(() => {
+    const keys = Object.keys(assets.heroes);
+    return [...new Set([...keys, "eagles"])];
+  }, []);
+  const quickReadCards = [
+    {
+      label: "Último evento",
+      value: formatAgo(newestEventAt),
+      tone: "text-pal-text",
+      accent: "from-pal-gold/35 via-pal-gold/10 to-transparent"
+    },
+    {
+      label: "Saúde geral",
+      value: overview.data?.health.overall_status ?? "loading",
+      tone: overview.data?.health.overall_status === "up" ? "text-pal-green" : overview.data?.health.overall_status === "down" ? "text-pal-red" : "text-pal-gold",
+      accent:
+        overview.data?.health.overall_status === "up"
+          ? "from-emerald-400/30 via-emerald-300/10 to-transparent"
+          : overview.data?.health.overall_status === "down"
+            ? "from-red-400/30 via-red-300/10 to-transparent"
+            : "from-pal-gold/35 via-pal-gold/10 to-transparent"
+    },
+    {
+      label: "Missões (60s)",
+      value: String(counts?.mission_events ?? 0),
+      tone: "text-amber-200",
+      accent: "from-amber-300/30 via-amber-200/10 to-transparent"
+    },
+    {
+      label: "Biblioteca (60s)",
+      value: String(counts?.library_events ?? 0),
+      tone: "text-emerald-300",
+      accent: "from-emerald-300/30 via-emerald-200/10 to-transparent"
+    }
+  ] as const;
 
   return (
     <div className="space-y-4">
-      <div className="px-1">
-        <div className="mb-1 flex items-center gap-2">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-pal-gold" />
-          <span className="text-[11px] uppercase tracking-[0.18em] text-pal-gold/80">Command Theater</span>
-        </div>
-        <h1 className="text-2xl font-semibold text-pal-gold">Dashboard - Mapa da Terra-Media</h1>
-        <p className="mt-1 max-w-[80ch] text-sm text-pal-text/80">
-          Fluxo vivo de missões, biblioteca e infraestrutura. Ações em outras abas acendem widgets no mapa, entram nos registros e atualizam o resumo do sistema.
-        </p>
-      </div>
+      <PageTitleBlock
+        eyebrow="Command Theater"
+        title="Dashboard - Mapa da Terra-Media"
+        subtitle="Fluxo vivo de missões, biblioteca e infraestrutura. Ações em outras abas acendem widgets no mapa, entram nos registros e atualizam o resumo do sistema."
+        accent="gold"
+        leadDot
+      />
 
-      <div className="rounded-xl border border-pal-gold/10 bg-black/20 px-4 py-3 backdrop-blur-sm">
-        <div className="text-xs uppercase tracking-[0.14em] text-pal-gold/75">Leitura rápida</div>
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-2">
-            <div className="text-[11px] text-pal-muted">Último evento</div>
-            <div className="mt-1 text-sm font-semibold text-pal-text">{formatAgo(newestEventAt)}</div>
-          </div>
-          <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-2">
-            <div className="text-[11px] text-pal-muted">Saúde geral</div>
-            <div className="mt-1">
-              <span className={["rounded-full border px-2 py-0.5 text-[11px]", statusChipClasses(overview.data?.health.overall_status)].join(" ")}>
-                {overview.data?.health.overall_status ?? "loading"}
-              </span>
+      <div className="rounded-xl border border-pal-gold/10 bg-black/18 p-2 backdrop-blur-sm">
+        <div className="px-2 pt-1 text-xs uppercase tracking-[0.14em] text-pal-gold/75">Leitura rápida</div>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {quickReadCards.map((card, idx) => (
+            <div
+              key={card.label}
+              className="group relative overflow-hidden rounded-lg border border-pal-gold/10 bg-black/20 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition duration-200 hover:border-pal-gold/20"
+            >
+              <div className={`pointer-events-none absolute inset-y-0 left-0 w-1 bg-gradient-to-b ${card.accent}`} />
+              <motion.div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 left-[-35%] w-[38%] skew-x-[-16deg] opacity-50"
+                animate={{ x: ["0%", "360%"] }}
+                transition={{ duration: 6.2, repeat: Number.POSITIVE_INFINITY, ease: "linear", delay: idx * 0.55 }}
+              >
+                <div className="h-full w-full bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.05)_45%,rgba(255,255,255,0.14)_52%,rgba(255,255,255,0.05)_60%,transparent_100%)]" />
+              </motion.div>
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_50%,rgba(232,178,58,0.06),transparent_45%)]" />
+              </div>
+              <div className="relative flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[11px] text-pal-text/65">{card.label}</div>
+                  <div className={`mt-1 text-base font-semibold leading-none ${card.tone}`}>{card.value}</div>
+                </div>
+                {card.label === "Saúde geral" ? (
+                  <span className={["shrink-0 rounded-full border px-2 py-0.5 text-[10px]", statusChipClasses(overview.data?.health.overall_status)].join(" ")}>
+                    {overview.data?.health.overall_status ?? "loading"}
+                  </span>
+                ) : (
+                  <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-pal-gold/10 bg-black/25 text-[10px] text-pal-gold/70">
+                    •
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-2">
-            <div className="text-[11px] text-pal-muted">Missões (60s)</div>
-            <div className="mt-1 text-sm font-semibold text-amber-200">{counts?.mission_events ?? 0}</div>
-          </div>
-          <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-2">
-            <div className="text-[11px] text-pal-muted">Biblioteca (60s)</div>
-            <div className="mt-1 text-sm font-semibold text-emerald-300">{counts?.library_events ?? 0}</div>
-          </div>
+          ))}
         </div>
       </div>
 
-      <PageCard>
-        <div className="relative min-h-[520px] overflow-hidden rounded-2xl border border-pal-gold/10 bg-black/10">
+      <section className="relative overflow-hidden rounded-2xl bg-transparent p-0">
+        <div className="relative min-h-[560px] overflow-hidden rounded-2xl border border-transparent bg-black/5 shadow-[0_22px_55px_rgba(0,0,0,0.34)]">
           <img src={assets.ui.mapBg} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover object-center opacity-85" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_25%,rgba(245,194,90,0.16),transparent_42%),radial-gradient(circle_at_80%_18%,rgba(71,112,255,0.12),transparent_40%),linear-gradient(to_bottom,rgba(0,0,0,0.08),rgba(0,0,0,0.7))]" />
+          <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[inset_0_0_0_1px_rgba(0,0,0,0.32),inset_0_18px_36px_rgba(0,0,0,0.14),inset_0_-18px_30px_rgba(0,0,0,0.10)]" />
 
           <div className="absolute inset-0">
             {MAP_MARKERS.map((marker) => (
@@ -333,8 +494,8 @@ export function DashboardPage() {
           <div className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-pal-gold/10 bg-pal-gold/5 shadow-[0_0_50px_rgba(232,178,58,0.08)]" />
           <div className="absolute left-1/2 top-1/2 h-36 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full border border-pal-gold/10" />
 
-          <div className="absolute left-[7%] top-[16%] w-[23%] max-w-[270px] min-w-[210px]">
-            <div className={`rounded-2xl border bg-black/35 p-3 backdrop-blur-sm transition-all ${widgetToneClasses(widgetPulse.missions.tone, isActivePulse("missions"))}`}>
+          <div className="absolute left-[7%] top-[15%] w-[25%] max-w-[310px] min-w-[240px]">
+            <div className={`rounded-2xl border bg-black/35 p-3.5 backdrop-blur-sm transition-all ${widgetToneClasses(widgetPulse.missions.tone, isActivePulse("missions"))}`}>
               <div className="mb-2 flex items-center justify-between">
                 <div>
                   <div className="text-[11px] uppercase tracking-[0.16em] text-pal-gold/80">Missions</div>
@@ -355,19 +516,52 @@ export function DashboardPage() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-5 gap-1">
-                {["aragorn", "legolas", "gandalf", "eowyn", "eagles"].map((hero, idx) => (
+              <div className="grid grid-cols-5 gap-1.5">
+                {heroSlots.map((hero) => (
+                  (() => {
+                    const avatar = heroSlotAvatar(hero);
+                    const isPrimary = activeHeroSlotKey && heroSigil(hero) === activeHeroSlotKey;
+                    const isActive = activeHeroSlotKeys.has(heroSigil(hero));
+                    return (
                   <div
                     key={hero}
                     className={[
-                      "grid h-7 place-items-center rounded-full border text-[9px] uppercase",
-                      activeHeroSlotKey && hero.slice(0, 2).toUpperCase() === activeHeroSlotKey
-                        ? "border-pal-gold/35 bg-pal-gold/10 text-pal-gold"
-                        : "border-pal-gold/10 bg-black/20 text-pal-muted"
+                      "relative mx-auto grid h-8 w-8 overflow-hidden rounded-full border text-[8px] font-semibold uppercase tracking-wide shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]",
+                      isPrimary
+                        ? "border-emerald-300/70 bg-emerald-400/12 text-emerald-100 ring-2 ring-emerald-300/60 shadow-[0_0_14px_rgba(16,185,129,0.35),0_0_28px_rgba(34,197,94,0.22)]"
+                        : isActive
+                          ? "border-emerald-300/50 bg-emerald-400/10 text-emerald-100 ring-1 ring-emerald-300/35 shadow-[0_0_10px_rgba(16,185,129,0.22)]"
+                          : "border-pal-gold/10 bg-black/25 text-pal-muted"
                     ].join(" ")}
+                    title={hero}
                   >
-                    {hero.slice(0, 2)}
+                    {avatar ? (
+                      <>
+                        <img
+                          src={avatar}
+                          alt=""
+                          aria-hidden="true"
+                          className={[
+                            "absolute inset-0 h-full w-full scale-110 object-cover object-center transition",
+                            isPrimary ? "brightness-125 saturate-125" : isActive ? "brightness-105 saturate-105" : "brightness-75 saturate-[0.55]"
+                          ].join(" ")}
+                        />
+                        <div
+                          className={[
+                            "absolute inset-0",
+                            isPrimary
+                              ? "bg-emerald-400/12"
+                              : isActive
+                                ? "bg-black/34"
+                                : "bg-black/82"
+                          ].join(" ")}
+                        />
+                      </>
+                    ) : null}
+                    <span className="relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">{heroSigil(hero)}</span>
                   </div>
+                    );
+                  })()
                 ))}
               </div>
               <div className="mt-2 text-[11px] text-pal-muted line-clamp-1">{missionWidget.subtitle}</div>
@@ -450,82 +644,102 @@ export function DashboardPage() {
             </div>
           </div>
         </div>
-      </PageCard>
+      </section>
 
-      <PageCard>
+      <div className={logSkin.wrap}>
+        {logSkin.overlays}
+        <div className="relative p-4">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Live Registros</h3>
           <span className="text-xs text-pal-muted">efeito {"->"} registro {"->"} status</span>
         </div>
-        <div className="max-h-[220px] space-y-2 overflow-auto pr-1">
+        <motion.div
+          key={timelineAnimationKey}
+          initial={false}
+          animate="show"
+          variants={{
+            show: {
+              transition: {
+                staggerChildren: 0.045,
+                delayChildren: 0.01
+              }
+            }
+          }}
+          className="max-h-[220px] space-y-2 overflow-auto pr-1"
+        >
           {timelineEvents.length === 0 ? <p className="text-sm text-pal-muted">Sem eventos ainda. Dispare ações em Missões/Biblioteca.</p> : null}
-          {timelineEvents.map((evt, idx) => (
-            <div
-              key={evt.id}
-              className={[
-                "rounded-lg border bg-black/15 px-3 py-2 text-xs transition-colors",
-                eventTone(evt),
-                idx === 0 ? "shadow-[0_0_20px_rgba(232,178,58,0.08)]" : ""
-              ].join(" ")}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-pal-text">{formatTimelineLabel(evt)}</span>
-                <span className="text-pal-muted">{formatAgo(evt.created_at)}</span>
-              </div>
-              <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-pal-muted">
-                <span>{evt.service}</span>
-                <span>{evt.stage}</span>
-                {evt.entity_id ? <span>• {evt.entity_id}</span> : null}
-                {evt.latency_ms ? <span>• {evt.latency_ms}ms</span> : null}
-                {evt.payload?.hero_display_name ? <span className="rounded-full border border-pal-gold/10 px-1.5 py-0.5">{String(evt.payload.hero_display_name)}</span> : null}
-                {evt.payload?.artifact_key ? <span className="rounded-full border border-pal-blue/15 px-1.5 py-0.5">{String(evt.payload.artifact_key)}</span> : null}
-                {typeof evt.payload?.points_awarded === "number" ? <span className="rounded-full border border-pal-green/15 px-1.5 py-0.5">+{evt.payload.points_awarded} pts</span> : null}
-              </div>
-            </div>
-          ))}
-        </div>
-      </PageCard>
-
-      <PageCard>
-        <div className="grid gap-3 md:grid-cols-[1.6fr_1fr]">
-          <div>
-            <div className="mb-2 text-xs uppercase tracking-[0.16em] text-pal-gold/80">Status</div>
-            <div className="flex flex-wrap gap-2">
-              {serviceRows.length > 0 ? (
-                serviceRows.map((svc) => (
-                  <span
-                    key={svc.service}
-                    className={["rounded-full border px-3 py-1 text-xs", statusChipClasses(svc.status)].join(" ")}
+          <AnimatePresence initial={false} mode="popLayout">
+            {timelineEvents.map((evt, idx) => (
+              <motion.div
+                key={evt.id}
+                layout="position"
+                variants={{
+                  show: {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    filter: "blur(0px)"
+                  }
+                }}
+                initial={{ opacity: 0, y: -16, scale: 0.985, filter: "blur(5px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: 10, scale: 0.99, filter: "blur(4px)" }}
+                transition={{
+                  layout: { type: "spring", stiffness: 360, damping: 30, mass: 0.7 },
+                  opacity: { duration: 0.22, ease: "easeOut", delay: idx < 5 ? idx * 0.02 : 0 },
+                  y: { type: "spring", stiffness: 420, damping: 32, mass: 0.6, delay: idx < 5 ? idx * 0.02 : 0 },
+                  scale: { duration: 0.2, ease: "easeOut" },
+                  filter: { duration: 0.22, ease: "easeOut" }
+                }}
+                className={[
+                  "group relative overflow-hidden rounded-lg border bg-black/15 px-3 py-2 text-xs transition-colors",
+                  eventTone(evt),
+                  idx === 0 ? "shadow-[0_0_20px_rgba(232,178,58,0.08)]" : ""
+                ].join(" ")}
+              >
+                {idx < 2 ? (
+                  <motion.div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0"
+                    initial={{ opacity: 0.38 }}
+                    animate={{ opacity: [0.26, 0.04, 0.14] }}
+                    transition={{ duration: 2.1, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
                   >
-                    {svc.service}: {svc.status}
-                  </span>
-                ))
-              ) : (
-                <span className="rounded-full border border-pal-gold/10 px-3 py-1 text-xs text-pal-muted">Carregando status...</span>
-              )}
-            </div>
-          </div>
-          <div>
-            <div className="mb-2 text-xs uppercase tracking-[0.16em] text-pal-gold/80">Counters</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: "Requests (60s)", value: counts?.requests ?? 0, tone: "text-sky-300" },
-                { label: "Mission events", value: counts?.mission_events ?? 0, tone: "text-amber-200" },
-                { label: "Library events", value: counts?.library_events ?? 0, tone: "text-emerald-300" },
-                { label: "Redis hits/miss", value: `${counts?.redis_hits ?? 0}/${counts?.redis_misses ?? 0}`, tone: "text-pal-gold" }
-              ].map((item) => (
-                <div key={item.label} className="rounded-lg border border-pal-gold/10 bg-black/20 px-3 py-2 text-xs">
-                  <div className="text-pal-muted">{item.label}</div>
-                  <div className={["mt-1 text-sm font-semibold", item.tone].join(" ")}>{item.value}</div>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_18%,rgba(232,178,58,0.08),transparent_46%)]" />
+                  </motion.div>
+                ) : null}
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 left-[-30%] w-[32%] skew-x-[-18deg] opacity-0 group-hover:opacity-100"
+                  animate={{ x: ["0%", "420%"] }}
+                  transition={{ duration: 2.4, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                >
+                  <div className="h-full w-full bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.04)_45%,rgba(255,255,255,0.12)_52%,rgba(255,255,255,0.04)_60%,transparent_100%)]" />
+                </motion.div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-pal-text">{formatTimelineLabel(evt)}</span>
+                  <span className="text-pal-muted">{formatAgo(evt.created_at)}</span>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-pal-muted">
+                  <span>{evt.service}</span>
+                  <span>{evt.stage}</span>
+                  {evt.entity_id ? <span>• {evt.entity_id}</span> : null}
+                  {evt.latency_ms ? <span>• {evt.latency_ms}ms</span> : null}
+                  {evt.payload?.hero_display_name ? <span className="rounded-full border border-pal-gold/10 px-1.5 py-0.5">{String(evt.payload.hero_display_name)}</span> : null}
+                  {evt.payload?.artifact_key ? <span className="rounded-full border border-pal-blue/15 px-1.5 py-0.5">{String(evt.payload.artifact_key)}</span> : null}
+                  {typeof evt.payload?.points_awarded === "number" ? <span className="rounded-full border border-pal-green/15 px-1.5 py-0.5">+{evt.payload.points_awarded} pts</span> : null}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
         </div>
-      </PageCard>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr]">
-        <PageCard>
+        <div className={missionsSkin.wrap}>
+          {missionsSkin.overlays}
+          <div className="relative p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold">Missões Ativas</h3>
             <span className={["text-xs", newestEventAt ? "text-amber-200" : "text-pal-muted"].join(" ")}>fila viva</span>
@@ -533,7 +747,16 @@ export function DashboardPage() {
           <div className="space-y-2">
             {missionEvents.length === 0 ? <p className="text-sm text-pal-muted">Inicie uma missão para ver progresso aqui.</p> : null}
             {missionEvents.map((evt) => (
-              <div key={evt.id} className="rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+              <div key={evt.id} className="group relative overflow-hidden rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-200 group-hover:opacity-100 bg-[radial-gradient(circle_at_12%_20%,rgba(232,178,58,0.08),transparent_40%)]" />
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 left-[-32%] w-[34%] skew-x-[-18deg] opacity-0 group-hover:opacity-100"
+                  animate={{ x: ["0%", "400%"] }}
+                  transition={{ duration: 2.6, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                >
+                  <div className="h-full w-full bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.03)_45%,rgba(255,226,164,0.11)_52%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
+                </motion.div>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-pal-text">{evt.label}</span>
                   <span className={["rounded-full border px-2 py-0.5 text-[10px]", eventTone(evt)].join(" ")}>{evt.status}</span>
@@ -548,9 +771,12 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-        </PageCard>
+          </div>
+        </div>
 
-        <PageCard>
+        <div className={librarySkin.wrap}>
+          {librarySkin.overlays}
+          <div className="relative p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold">Biblioteca / Cache</h3>
             <span className="text-xs text-pal-muted">Redis + Postgres</span>
@@ -558,7 +784,16 @@ export function DashboardPage() {
           <div className="space-y-2">
             {libraryEvents.length === 0 ? <p className="text-sm text-pal-muted">Faça buscas/knocks/feat na Biblioteca para alimentar este painel.</p> : null}
             {libraryEvents.map((evt) => (
-              <div key={evt.id} className="rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+              <div key={evt.id} className="group relative overflow-hidden rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+                <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-200 group-hover:opacity-100 bg-[radial-gradient(circle_at_12%_20%,rgba(56,189,248,0.08),transparent_40%)]" />
+                <motion.div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 left-[-32%] w-[34%] skew-x-[-18deg] opacity-0 group-hover:opacity-100"
+                  animate={{ x: ["0%", "400%"] }}
+                  transition={{ duration: 2.6, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                >
+                  <div className="h-full w-full bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.03)_45%,rgba(125,211,252,0.11)_52%,rgba(255,255,255,0.03)_60%,transparent_100%)]" />
+                </motion.div>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-pal-text">{evt.label}</span>
                   <span className={["rounded-full border px-2 py-0.5 text-[10px]", eventTone(evt)].join(" ")}>{evt.service}</span>
@@ -571,31 +806,38 @@ export function DashboardPage() {
               </div>
             ))}
           </div>
-        </PageCard>
+          </div>
+        </div>
 
-        <PageCard>
+        <div className={summarySkin.wrap}>
+          {summarySkin.overlays}
+          <div className="relative p-4">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold">Resumo Operacional</h3>
             <span className="text-xs text-pal-muted">fluxo completo</span>
           </div>
           <div className="space-y-2 text-sm">
-            <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+            <div className="group relative overflow-hidden rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-200 group-hover:opacity-100 bg-[radial-gradient(circle_at_10%_14%,rgba(232,178,58,0.07),transparent_42%)]" />
               <div className="text-xs uppercase tracking-[0.14em] text-pal-gold/80">Missão</div>
               <div className="mt-1 text-pal-text">{missionWidget.phase}</div>
               <div className="text-xs text-pal-muted">{missionWidget.heroName ? `${missionWidget.heroName} • ${missionWidget.missionType ?? ""}` : "Sem missão recente"}</div>
             </div>
-            <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+            <div className="group relative overflow-hidden rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-200 group-hover:opacity-100 bg-[radial-gradient(circle_at_10%_14%,rgba(56,189,248,0.06),transparent_42%)]" />
               <div className="text-xs uppercase tracking-[0.14em] text-pal-gold/80">Artefato / Cache</div>
               <div className="mt-1 text-pal-text">{libraryWidget.mode === "score" ? "score handoff" : (latestLibraryEvent?.stage ?? "idle")}</div>
               <div className="text-xs text-pal-muted">{libraryWidget.heroName ? `${libraryWidget.heroName}${libraryWidget.pointsAwarded ? ` +${libraryWidget.pointsAwarded}` : ""}` : (latestLibraryEvent?.label ?? "Sem evento de biblioteca")}</div>
             </div>
-            <div className="rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+            <div className="group relative overflow-hidden rounded-lg border border-pal-gold/10 bg-black/20 p-3">
+              <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-200 group-hover:opacity-100 bg-[radial-gradient(circle_at_10%_14%,rgba(16,185,129,0.06),transparent_42%)]" />
               <div className="text-xs uppercase tracking-[0.14em] text-pal-gold/80">Infra</div>
               <div className="mt-1 text-pal-text">{latestInfraEvent?.service ?? "runtime"}</div>
               <div className="text-xs text-pal-muted">{widgetPulse.infra.label}</div>
             </div>
           </div>
-        </PageCard>
+          </div>
+        </div>
       </div>
 
       {(overview.error || feed.error || ticker.error) ? (

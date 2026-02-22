@@ -254,3 +254,92 @@ Use this format for future entries:
     - mission trace endpoint returns grouped traces after launching a mission
     - SQL `SELECT` query returns rows
     - SQL `DELETE` query is rejected with `403` (`Only SELECT queries are allowed`)
+
+### [2026-02-22T17:55:00+00:00] UI modernization phase 1 (TopNav command bar + shared page title block)
+
+- Added shared page header component:
+  - `frontend/src/components/shared/PageTitleBlock.tsx`
+  - subtle mount reveal (eyebrow/title/subtitle + accent line)
+  - reduced-motion friendly behavior via `framer-motion` `useReducedMotion`
+  - reusable props for eyebrow/title/subtitle/accent and optional inline child content (used by `Arquitetura` legend chips)
+- Upgraded `frontend/src/components/layout/TopNav.tsx`:
+  - refined-glass command bar shell (layered border/highlight/blur)
+  - premium active tab pill with animated shared highlight (`LayoutGroup` + `layoutId`)
+  - improved hover/focus states and small “online” brand indicator
+  - preserved routes, icons, and responsive label behavior
+- Migrated duplicated page headers to `PageTitleBlock`:
+  - `frontend/src/pages/Dashboard.tsx`
+  - `frontend/src/pages/Missions.tsx`
+  - `frontend/src/pages/Library.tsx`
+  - `frontend/src/pages/Architecture.tsx` (including legend chips as child content)
+- Validation:
+  - `npm run build` (frontend) passed (`tsc -b && vite build`)
+
+### [2026-02-22T18:10:00+00:00] Landing page (`/`) modernization (Palantir hero + landing menu)
+
+- Updated `frontend/src/pages/Welcome.tsx` to apply the requested modern effects on the first Palantir page (the page outside `MainShell`):
+  - added refined-glass landing command bar/menu (links to Dashboard/Missoes/Biblioteca/Arquitetura)
+  - modernized Palantir hero/title treatment with subtle motion and cinematic accent line
+  - improved CTA cards (glass treatment, icon badges, hover polish)
+  - preserved existing theme/background and route structure
+- Validation:
+  - `npm run build` (frontend) passed (`tsc -b && vite build`)
+
+- [2026-02-22] Welcome page polish: removed top landing command bar (kept internal TopNav), added subtler eyebrow/title reveal + one-pass shimmer on Palantir, replaced bottom stat cards with slim colored stat strip; rebuilt frontend container.
+
+- [2026-02-22] Biblioteca redesign: split top ops scene and dedicated leaderboard heroes block; added recent hero activity chips from /api/missions/traces; moved SQL explorer into Postgres-themed backdrop scene using minas-tirith-db; preserved existing cache/rate-limit/leaderboard/sql behavior.
+
+### [2026-02-22T21:36:00+00:00] Mission flow stabilization (cross-tab persistence + telemetry de-dup + UX continuity)
+
+- Fixed `Missoes` page flow break where active missions disappeared after navigating away/back while terminal traces continued:
+  - Frontend (`frontend/src/pages/Missions.tsx`) now hydrates/merges top mission cards from `/api/missions` polling after remount.
+  - Backend (`api/src/routes/missions.py`) now mirrors runtime mission state in Redis (`missions:runtime:state`) so state survives API worker changes and cross-tab navigation.
+- Fixed runaway mission trace growth / duplicated steps caused by mission progression telemetry being emitted inside read refreshes:
+  - Removed extra per-mission polling loop in `Missions.tsx` (kept `/api/missions` list polling + traces polling).
+  - Added Redis-backed cross-worker `emit-once` guards in `missions.py` for `mission_executing`, progress buckets, `mission_completed`, `mission_persisted`, `hero_scored`, `leaderboard_update`, and `score_apply`.
+  - Added terminal refresh short-circuit for fully finalized missions to stop repeated refresh/emission after `SCORED`.
+- Improved `Missoes` top mission cards UX continuity:
+  - Cards now show active missions first and keep completed missions visible below (pushed down naturally) instead of abruptly disappearing.
+- Dashboard mission widget polish:
+  - unique hero sigils to avoid collisions (`Gandalf` vs `Galadriel`)
+  - mini hero avatar tokens in widget grid with strong inactive dimming and active highlight for readability
+- Validation:
+  - `python3 -m compileall api/src`
+  - `npm run build` (frontend)
+  - `docker compose up --build -d api`
+  - `docker compose up --build -d frontend`
+  - clean reset test (`docker compose down --volumes --remove-orphans`, remove local images, rebuild)
+
+### [2026-02-22T22:11:25+00:00] Biblioteca visual hierarchy polish + dashboard mission token readability
+
+- Biblioteca (`frontend/src/pages/Library.tsx`)
+  - Moved `Leaderboard de Heróis` and `Explorador SQL` headers above their framed blocks for visual consistency with page/header patterns.
+  - Swapped leaderboard block background to tavern image (`assets.locations.tavern`), keeping hero block semantically distinct from the top library scene.
+  - Tuned Biblioteca top ops scene brightness/contrast (darker `libraryBg` treatment) and restored blur only to small stat/text cards instead of large wrappers.
+  - Lightened SQL/Postgres backdrop overlays so `minas-tirith-db` remains visible while preserving readability.
+  - Standardized hero/SQL section title styling to larger gold titles.
+- Assets (`frontend/src/lib/assets.ts`)
+  - Added `assets.locations.tavern` mapping for `/images/locations/tavern.png`.
+- Dashboard (`frontend/src/pages/Dashboard.tsx`)
+  - Added unique hero sigils (`GD`/`GL`, etc.) to avoid collisions in mission widget slots.
+  - Replaced mission widget slot text pills with circular hero avatar tokens (sigil overlay + strong inactive dimming + active highlighting).
+- Validation:
+  - `npm run build` (frontend)
+  - `docker compose up --build -d frontend`
+
+### [2026-02-22T22:15:34+00:00] Mission runtime pacing + cross-tab mission continuity hardening + dashboard/biblioteca polish follow-up
+
+- Missions (`api/src/routes/missions.py`)
+  - Increased execution phase duration to random `4.0–8.0s` (after `QUEUED`, before `PERSISTED`) so mission execution is visibly longer in `Missoes` and `Dashboard` widgets.
+  - Hardened refresh path against post-finalization churn by using Redis-backed emit-once guards and terminal short-circuit behavior (preventing traces from growing after `SCORED`).
+  - Mirrored runtime mission state in Redis so active missions persist across page changes and API worker changes.
+- Missoes frontend (`frontend/src/pages/Missions.tsx`)
+  - Removed per-mission polling multiplier; page now relies on `/api/missions` + traces polling and keeps top mission cards in sync after navigation.
+  - Preserved UX continuity by keeping active missions visible and allowing completed ones to remain briefly / be pushed down naturally.
+- Dashboard frontend (`frontend/src/pages/Dashboard.tsx`)
+  - Improved mission widget hero slots with circular avatar tokens, unique sigils, stronger inactive dimming, and clearer active highlighting.
+  - Polished lower panels (`Live Registros`, `Missões Ativas`, `Biblioteca / Cache`, `Resumo Operacional`) with distinct skins and reduced bright borders; removed status/counters redundancy from dashboard and shifted infra-health emphasis to `Arquitetura`.
+- Biblioteca frontend (`frontend/src/pages/Library.tsx`)
+  - Continued visual hierarchy tuning: header placement for hero/SQL sections, tavern hero backdrop, top ops scene brightness reduction, blur limited to small text cards, and SQL/Postgres backdrop exposure balancing.
+- Validation / deploy
+  - Repeated `npm run build` (frontend), `python3 -m compileall api/src`, and targeted `docker compose up --build -d api/frontend` deploys during iteration.
