@@ -1,0 +1,10 @@
+[project]
+name = "practice-redis-patterns"
+version = "0.1.0"
+description = "Prática: Redis além de cache — feature store, rate limiting, session"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "redis>=5.0.0",
+]

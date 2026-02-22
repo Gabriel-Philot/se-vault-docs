@@ -1,0 +1,14 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"   # Acesso direto ao Gunicorn (para comparar)
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"       # Acesso via Nginx (como em produção)
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api

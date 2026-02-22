@@ -1,0 +1,10 @@
+[project]
+name = "practice-gunicorn"
+version = "0.1.0"
+description = "Prática: Web Server vs App Server — Nginx + Gunicorn + Uvicorn + FastAPI"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "gunicorn>=23.0.0",
+]
