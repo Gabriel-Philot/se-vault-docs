@@ -1,0 +1,5 @@
+{
+  "name": "CodeMatrix",
+  "description": "An interactive educational environment for exploring the hidden layers of computing. From raw bytes to memory management.",
+  "requestFramePermissions": []
+}

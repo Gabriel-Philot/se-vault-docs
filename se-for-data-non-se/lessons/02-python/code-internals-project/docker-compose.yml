@@ -1,0 +1,73 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api/src:/app/src
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - SANDBOX_PY_CONTAINER=code-internals-sandbox-py
+      - SANDBOX_C_CONTAINER=code-internals-sandbox-c
+      - EXECUTION_TIMEOUT=5
+    depends_on:
+      sandbox-py:
+        condition: service_healthy
+      sandbox-c:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=3).read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 10s
+
+  sandbox-py:
+    build: ./sandbox-py
+    container_name: code-internals-sandbox-py
+    network_mode: "none"
+    read_only: true
+    tmpfs:
+      - /tmp:size=50M,exec
+    mem_limit: 128m
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    command: ["sleep", "infinity"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -w /tmp"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  sandbox-c:
+    build: ./sandbox-c
+    container_name: code-internals-sandbox-c
+    network_mode: "none"
+    read_only: true
+    tmpfs:
+      - /tmp:size=50M,exec
+    mem_limit: 128m
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    command: ["sleep", "infinity"]
+    healthcheck:
+      test: ["CMD", "sh", "-c", "test -w /tmp"]
+      interval: 20s
+      timeout: 5s
+      retries: 3

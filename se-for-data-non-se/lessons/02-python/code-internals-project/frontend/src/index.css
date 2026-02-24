@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ci-bg: #0a0e14;
+  --color-ci-panel: #141a22;
+  --color-ci-surface: #1c2333;
+  --color-ci-border: #2d3548;
+  --color-ci-green: #39d353;
+  --color-ci-blue: #58a6ff;
+  --color-ci-amber: #d4a72c;
+  --color-ci-red: #f85149;
+  --color-ci-cyan: #56d4dd;
+  --color-ci-purple: #bc8cff;
+  --color-ci-text: #c9d1d9;
+  --color-ci-muted: #6e7681;
+  --color-ci-dim: #484f58;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-ci-bg);
+  color: var(--color-ci-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-ci-green) 20%, transparent);
+  color: var(--color-ci-green);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ci-border);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ci-muted);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-ci-bg) 65%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--color-ci-cyan) 80%, transparent);
+  border-radius: 0.5rem;
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cursorBlink {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-ci-cyan) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 24px 2px color-mix(in srgb, var(--color-ci-cyan) 35%, transparent);
+  }
+}
+
+@utility ambient-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-ci-border) 40%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-ci-border) 35%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 36px 36px;
+}
+
+@utility ambient-radial {
+  background-image: radial-gradient(
+    circle at 20% 20%,
+    color-mix(in srgb, var(--color-ci-cyan) 24%, transparent) 0%,
+    transparent 42%
+  );
+}
+
+@utility animate-scan-line {
+  animation: scanLine 8s linear infinite;
+}
+
+@utility animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2.8s linear infinite;
+}
+
+@utility animate-fade-up {
+  animation: fadeUp 0.7s ease-out both;
+}
+
+@utility animate-cursor-blink {
+  animation: cursorBlink 1.1s steps(1, end) infinite;
+}
+
+@utility animate-glow-pulse {
+  animation: glowPulse 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .animate-scan-line,
+  .animate-shimmer,
+  .animate-fade-up,
+  .animate-cursor-blink,
+  .animate-glow-pulse {
+    animation: none !important;
+  }
+}
