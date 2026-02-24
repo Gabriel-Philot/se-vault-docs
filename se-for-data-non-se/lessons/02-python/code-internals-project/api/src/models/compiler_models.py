@@ -22,6 +22,7 @@ class CompileCResponse(BaseModel):
     exec_time_ms: float
     compile_time_ms: float
     binary_size: int
+    peak_rss_kb: int | None = None
 
 
 class InterpretPythonRequest(BaseModel):
@@ -42,4 +43,5 @@ class InterpretPythonResponse(BaseModel):
     output: str
     exec_time_ms: float
     pyc_size: int
+    peak_rss_kb: int | None = None
     error: str | None = None

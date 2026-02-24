@@ -52,9 +52,9 @@ async def exec_command(req: ShellExecRequest):
 
 
 @router.get("/filesystem", response_model=FilesystemResponse)
-async def filesystem():
+async def filesystem(user: str = "alice"):
     """Return the virtual filesystem tree."""
-    return get_filesystem()
+    return get_filesystem(user)
 
 
 @router.post("/switch-user", response_model=SwitchUserResponse)

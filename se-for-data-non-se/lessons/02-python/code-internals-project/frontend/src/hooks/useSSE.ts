@@ -32,7 +32,6 @@ export function useSSE(path: string, body: Record<string, unknown> | null) {
     if (!body) return;
 
     controllerRef.current?.abort();
-    setEvents([]);
     setStatus("streaming");
     setError(null);
 

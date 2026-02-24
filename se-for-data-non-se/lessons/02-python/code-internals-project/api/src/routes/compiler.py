@@ -42,6 +42,7 @@ async def compile_c_endpoint(req: CompileCRequest):
         exec_time_ms=result.get("exec_time_ms", 0),
         compile_time_ms=result.get("compile_time_ms", 0),
         binary_size=result.get("binary_size", 0),
+        peak_rss_kb=result.get("peak_rss_kb"),
     )
 
 
@@ -70,5 +71,6 @@ async def interpret_python_endpoint(req: InterpretPythonRequest):
         output=result.get("output", ""),
         exec_time_ms=result.get("exec_time_ms", 0),
         pyc_size=result.get("pyc_size", 0),
+        peak_rss_kb=result.get("peak_rss_kb"),
         error=result.get("error"),
     )

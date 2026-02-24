@@ -16,6 +16,38 @@ from src.models.memory_models import (
 _sessions: dict[str, dict] = {}
 
 
+def _clone_stack(stack: list[StackFrame]) -> list[StackFrame]:
+    return [
+        StackFrame(
+            function=frame.function,
+            return_addr=frame.return_addr,
+            variables=[
+                StackVariable(
+                    name=var.name,
+                    type=var.type,
+                    value=var.value,
+                    points_to_heap=var.points_to_heap,
+                )
+                for var in frame.variables
+            ],
+        )
+        for frame in stack
+    ]
+
+
+def _clone_heap(heap: list[HeapBlock]) -> list[HeapBlock]:
+    return [
+        HeapBlock(
+            address=block.address,
+            size=block.size,
+            type=block.type,
+            status=block.status,
+            allocated_by=block.allocated_by,
+        )
+        for block in heap
+    ]
+
+
 def create_python_trace(code: str) -> tuple[str, int]:
     """Create a Python memory trace session."""
     error = validate_python_code(code)
@@ -144,8 +176,8 @@ def _build_python_steps(raw_steps: list[dict], code: str) -> list[StepResponse]:
                 line=line,
                 action=action,
                 description=description,
-                stack=list(stack),
-                heap=list(heap),
+                stack=_clone_stack(stack),
+                heap=_clone_heap(heap),
                 refcounts=refcounts if refcounts else None,
             )
         )
@@ -197,40 +229,6 @@ def _build_c_steps_static(code: str) -> list[StepResponse]:
             step_idx += 1
             continue
 
-        # Detect variable declarations
-        if any(
-            stripped.startswith(t)
-            for t in ("int ", "float ", "double ", "char ", "long ")
-        ):
-            parts = stripped.rstrip(";").split("=")
-            decl = parts[0].strip().split()
-            if len(decl) >= 2:
-                var_type = decl[0]
-                var_name = decl[-1].strip("*")
-                var_val = parts[1].strip() if len(parts) > 1 else "0"
-                if stack:
-                    stack[-1].variables.append(
-                        StackVariable(
-                            name=var_name,
-                            type=var_type,
-                            value=var_val[:20],
-                            points_to_heap="*" in stripped,
-                        )
-                    )
-            steps.append(
-                StepResponse(
-                    step=step_idx,
-                    line=line_num,
-                    action="line",
-                    description=f"Line {line_num}: {stripped}",
-                    stack=list(stack),
-                    heap=list(heap),
-                    refcounts=None,
-                )
-            )
-            step_idx += 1
-            continue
-
         # Detect malloc
         if "malloc(" in stripped:
             size_str = stripped.split("malloc(")[1].split(")")[0]
@@ -250,14 +248,68 @@ def _build_c_steps_static(code: str) -> list[StepResponse]:
                         v.value = f"0x{heap_addr_counter:04x}"
                         v.points_to_heap = True
             heap_addr_counter += 0x100
+
+            if any(
+                stripped.startswith(t)
+                for t in ("int ", "float ", "double ", "char ", "long ")
+            ):
+                parts = stripped.rstrip(";").split("=")
+                decl = parts[0].strip().split()
+                if len(decl) >= 2 and stack:
+                    var_type = decl[0]
+                    var_name = decl[-1].strip("*")
+                    if not any(v.name == var_name for v in stack[-1].variables):
+                        stack[-1].variables.append(
+                            StackVariable(
+                                name=var_name,
+                                type=var_type,
+                                value=block.address,
+                                points_to_heap=True,
+                            )
+                        )
+
             steps.append(
                 StepResponse(
                     step=step_idx,
                     line=line_num,
                     action="heap_alloc",
                     description=f"malloc({size_str}) - allocating on heap",
-                    stack=list(stack),
-                    heap=list(heap),
+                    stack=_clone_stack(stack),
+                    heap=_clone_heap(heap),
+                    refcounts=None,
+                )
+            )
+            step_idx += 1
+            continue
+
+        # Detect variable declarations
+        if any(
+            stripped.startswith(t)
+            for t in ("int ", "float ", "double ", "char ", "long ")
+        ):
+            parts = stripped.rstrip(";").split("=")
+            decl = parts[0].strip().split()
+            if len(decl) >= 2:
+                var_type = decl[0]
+                var_name = decl[-1].strip("*")
+                var_val = parts[1].strip() if len(parts) > 1 else "0"
+                if stack and not any(v.name == var_name for v in stack[-1].variables):
+                    stack[-1].variables.append(
+                        StackVariable(
+                            name=var_name,
+                            type=var_type,
+                            value=var_val[:20],
+                            points_to_heap="*" in stripped,
+                        )
+                    )
+            steps.append(
+                StepResponse(
+                    step=step_idx,
+                    line=line_num,
+                    action="line",
+                    description=f"Line {line_num}: {stripped}",
+                    stack=_clone_stack(stack),
+                    heap=_clone_heap(heap),
                     refcounts=None,
                 )
             )
@@ -277,8 +329,8 @@ def _build_c_steps_static(code: str) -> list[StepResponse]:
                     line=line_num,
                     action="heap_free",
                     description=f"free({ptr_name}) - deallocating heap memory",
-                    stack=list(stack),
-                    heap=list(heap),
+                    stack=_clone_stack(stack),
+                    heap=_clone_heap(heap),
                     refcounts=None,
                 )
             )
@@ -294,8 +346,8 @@ def _build_c_steps_static(code: str) -> list[StepResponse]:
                         line=line_num,
                         action="line",
                         description=f"Line {line_num}: {stripped}",
-                        stack=list(stack),
-                        heap=list(heap),
+                        stack=_clone_stack(stack),
+                        heap=_clone_heap(heap),
                         refcounts=None,
                     )
                 )
@@ -309,8 +361,8 @@ def _build_c_steps_static(code: str) -> list[StepResponse]:
                         line=line_num,
                         action="stack_pop",
                         description=f"Returning from {func}()",
-                        stack=list(stack),
-                        heap=list(heap),
+                        stack=_clone_stack(stack),
+                        heap=_clone_heap(heap),
                         refcounts=None,
                     )
                 )
@@ -324,8 +376,8 @@ def _build_c_steps_static(code: str) -> list[StepResponse]:
                 line=line_num,
                 action="line",
                 description=f"Line {line_num}: {stripped}",
-                stack=list(stack),
-                heap=list(heap),
+                stack=_clone_stack(stack),
+                heap=_clone_heap(heap),
                 refcounts=None,
             )
         )

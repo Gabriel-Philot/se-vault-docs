@@ -42,6 +42,7 @@ export function useCompile() {
   }, []);
 
   const compileC = useCallback(async (code: string, optimization: string) => {
+    const startedAt = performance.now();
     setLoading(true);
     setError(null);
     setErrorHint(null);
@@ -53,17 +54,20 @@ export function useCompile() {
       });
       setCResult(res);
       setBackendStatus("ok");
+      return { ok: true, elapsedMs: performance.now() - startedAt, result: res };
     } catch (err) {
       const normalized = normalizeApiError(err);
       setError(normalized.message);
       setErrorHint(normalized.hint);
       setBackendStatus("error");
+      return { ok: false, elapsedMs: performance.now() - startedAt, result: null };
     } finally {
       setLoading(false);
     }
   }, [normalizeApiError]);
 
   const interpretPython = useCallback(async (code: string) => {
+    const startedAt = performance.now();
     setLoading(true);
     setError(null);
     setErrorHint(null);
@@ -78,11 +82,13 @@ export function useCompile() {
       );
       setPyResult(res);
       setBackendStatus("ok");
+      return { ok: true, elapsedMs: performance.now() - startedAt, result: res };
     } catch (err) {
       const normalized = normalizeApiError(err);
       setError(normalized.message);
       setErrorHint(normalized.hint);
       setBackendStatus("error");
+      return { ok: false, elapsedMs: performance.now() - startedAt, result: null };
     } finally {
       setLoading(false);
     }

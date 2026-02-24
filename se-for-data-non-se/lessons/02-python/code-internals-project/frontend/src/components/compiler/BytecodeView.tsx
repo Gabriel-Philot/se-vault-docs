@@ -11,15 +11,16 @@ export function BytecodeView({ opcodes, bytecodeRaw }: BytecodeViewProps) {
   const hasBytecode = opcodes.length > 0 || bytecodeRaw.trim().length > 0;
 
   return (
-    <div className="bg-ci-panel rounded-xl border border-ci-border p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium text-ci-muted">
-          Python Bytecode
-        </h3>
+    <div className="rounded-xl border border-ci-border bg-ci-panel p-4 sm:p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-medium text-ci-muted">Python Bytecode</h3>
+          <p className="mt-1 text-[11px] text-ci-dim">Switch between disassembled table and raw interpreter dump.</p>
+        </div>
         <button
           onClick={() => setShowRaw(!showRaw)}
           aria-pressed={showRaw}
-          className="rounded-md border border-ci-blue/40 bg-ci-blue/10 px-2.5 py-1 text-xs font-medium text-ci-blue transition-colors duration-200 hover:bg-ci-blue/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ci-blue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ci-bg"
+          className="rounded-md border border-ci-blue/40 bg-ci-blue/10 px-2.5 py-1 text-xs font-medium text-ci-blue transition-all duration-200 hover:bg-ci-blue/20 hover:shadow-[0_0_16px_rgba(56,189,248,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ci-blue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-ci-bg"
         >
           {showRaw ? "Table View" : "Raw View"}
         </button>
@@ -32,36 +33,36 @@ export function BytecodeView({ opcodes, bytecodeRaw }: BytecodeViewProps) {
       )}
 
       {hasBytecode && showRaw ? (
-        <pre className="text-xs font-mono text-ci-text overflow-auto max-h-64 whitespace-pre-wrap">
+        <pre className="max-h-72 overflow-auto rounded-md border border-ci-border/60 bg-ci-surface/45 p-3 text-xs font-mono text-ci-text whitespace-pre-wrap">
           {bytecodeRaw}
         </pre>
       ) : hasBytecode ? (
-        <div className="overflow-auto max-h-64">
+        <div className="max-h-72 overflow-auto rounded-md border border-ci-border/70">
           <table className="w-full text-xs font-mono">
             <thead>
-              <tr className="text-ci-muted border-b border-ci-border">
-                <th className="text-left py-1 px-2">Line</th>
-                <th className="text-left py-1 px-2">Offset</th>
-                <th className="text-left py-1 px-2">Opcode</th>
-                <th className="text-left py-1 px-2">Arg</th>
-                <th className="text-left py-1 px-2">Argval</th>
+              <tr className="border-b border-ci-border bg-ci-surface/60 text-ci-muted">
+                <th className="px-2 py-1 text-left">Line</th>
+                <th className="px-2 py-1 text-left">Offset</th>
+                <th className="px-2 py-1 text-left">Opcode</th>
+                <th className="px-2 py-1 text-left">Arg</th>
+                <th className="px-2 py-1 text-left">Argval</th>
               </tr>
             </thead>
             <tbody>
               {opcodes.map((op) => (
                 <tr
                   key={op.offset}
-                  className="border-b border-ci-border/50 hover:bg-ci-surface transition-colors duration-150"
+                  className="border-b border-ci-border/50 transition-colors duration-150 hover:bg-ci-surface"
                 >
-                  <td className="py-1 px-2 text-ci-dim">
+                  <td className="px-2 py-1 text-ci-dim">
                     {op.line ?? ""}
                   </td>
-                  <td className="py-1 px-2 text-ci-muted">{op.offset}</td>
-                  <td className="py-1 px-2 text-ci-blue">{op.opname}</td>
-                  <td className="py-1 px-2 text-ci-text">
+                  <td className="px-2 py-1 text-ci-muted">{op.offset}</td>
+                  <td className="px-2 py-1 text-ci-blue">{op.opname}</td>
+                  <td className="px-2 py-1 text-ci-text">
                     {op.arg ?? ""}
                   </td>
-                  <td className="py-1 px-2 text-ci-cyan">
+                  <td className="px-2 py-1 text-ci-cyan">
                     {op.argval ?? ""}
                   </td>
                 </tr>

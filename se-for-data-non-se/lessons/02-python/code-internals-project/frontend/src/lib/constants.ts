@@ -10,7 +10,7 @@ export const PANEL_CONFIG: Array<{
   { id: "bytes", label: "Bytes Explorer", accent: "ci-cyan" },
   { id: "shell", label: "Shell & Process", accent: "ci-green" },
   { id: "compiler", label: "Compiled vs Interpreted", accent: "ci-amber" },
-  { id: "memory", label: "Stack vs Heap", accent: "ci-purple" },
+  { id: "memory", label: "Stack vs Heap", accent: "ci-blue" },
 ];
 
 export const C_SNIPPETS: Array<{ name: string; code: string }> = [
@@ -30,12 +30,35 @@ int main() {
     name: "malloc_demo",
     code: `#include <stdio.h>
 #include <stdlib.h>
+
+int sum_weighted(int *arr, int *weights, int n);
+
 int main() {
-    int *arr = (int *)malloc(10 * sizeof(int));
-    for (int i = 0; i < 10; i++) arr[i] = i * i;
-    printf("arr[5] = %d\\n", arr[5]);
+    int n = 8;
+    int *arr = (int *)malloc(n * sizeof(int));
+    int *weights = (int *)malloc(n * sizeof(int));
+    int *scratch = (int *)malloc(4 * sizeof(int));
+
+    for (int i = 0; i < n; i++) {
+        arr[i] = i * i;
+        weights[i] = i + 1;
+    }
+
+    int result = sum_weighted(arr, weights, n);
+    printf("weighted sum = %d\\n", result);
+
+    free(scratch);
+    free(weights);
     free(arr);
     return 0;
+}
+
+int sum_weighted(int *arr, int *weights, int n) {
+    int total = 0;
+    for (int i = 0; i < n; i++) {
+        total += arr[i] * weights[i];
+    }
+    return total;
 }`,
   },
   {

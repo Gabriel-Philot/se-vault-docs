@@ -6,9 +6,16 @@ interface AsciiChar {
   char: string;
 }
 
+const CONTROL_NAMES = [
+  "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
+  "BS", "HT", "LF", "VT", "FF", "CR", "SO", "SI",
+  "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB",
+  "CAN", "EM", "SUB", "ESC", "FS", "GS", "RS", "US",
+];
+
 function getAsciiChar(code: number): AsciiChar {
   let char: string;
-  if (code < ASCII_PRINTABLE_START) char = "CTL";
+  if (code < ASCII_PRINTABLE_START) char = CONTROL_NAMES[code] ?? "CTL";
   else if (code === 127) char = "DEL";
   else char = String.fromCharCode(code);
   return { code, char };
@@ -21,7 +28,12 @@ export function AsciiTable() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-ci-muted">ASCII Table</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium text-ci-muted">ASCII Table</h3>
+        <span className="text-xs text-ci-dim">
+          CTL values are non-printable control characters.
+        </span>
+      </div>
 
       {selected !== null && (
         <div className="flex flex-wrap gap-3 rounded-lg border border-ci-cyan/35 bg-linear-to-r from-ci-cyan/12 to-ci-cyan/4 px-3 py-2 text-xs font-mono shadow-sm shadow-ci-cyan/8">
@@ -62,7 +74,7 @@ export function AsciiTable() {
               title={`${code} (0x${code.toString(16).padStart(2, "0")})`}
               aria-pressed={isSelected}
             >
-              <span className={isControl ? "text-[10px] sm:text-xs" : ""}>{char}</span>
+              <span className={isControl ? "text-[10px]" : ""}>{char}</span>
             </button>
           );
         })}

@@ -57,6 +57,10 @@ body {
   border-radius: 0.5rem;
 }
 
+.shell-command-input:focus-visible {
+  box-shadow: none;
+}
+
 @keyframes scanLine {
   0% {
     transform: translateY(-100%);

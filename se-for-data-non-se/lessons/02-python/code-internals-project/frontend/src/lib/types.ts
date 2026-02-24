@@ -46,6 +46,7 @@ export interface ShellEvent {
   data: string;
   step: number;
   pipe_stage: number | null;
+  cwd?: string | null;
 }
 
 export interface FilesystemNode {
@@ -94,6 +95,7 @@ export interface CompileCResponse {
   exec_time_ms: number;
   compile_time_ms: number;
   binary_size: number;
+  peak_rss_kb: number | null;
 }
 
 export interface InterpretPythonRequest {
@@ -114,6 +116,7 @@ export interface InterpretPythonResponse {
   output: string;
   exec_time_ms: number;
   pyc_size: number;
+  peak_rss_kb: number | null;
   error: string | null;
 }
 

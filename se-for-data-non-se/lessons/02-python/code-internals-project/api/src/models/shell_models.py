@@ -12,6 +12,7 @@ class ShellEvent(BaseModel):
     data: str
     step: int = 0
     pipe_stage: int | None = None
+    cwd: str | None = None
 
 
 class FilesystemNode(BaseModel):

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Get Python bytecode via dis.dis() and return structured JSON."""
+
 import dis
 import io
 import json
 import marshal
+import resource
 import sys
 import time
 
@@ -25,13 +27,15 @@ def get_bytecode(code: str) -> dict:
     # Extract structured opcodes
     opcodes = []
     for instr in dis.get_instructions(compiled):
-        opcodes.append({
-            "offset": instr.offset,
-            "opname": instr.opname,
-            "arg": instr.arg,
-            "argval": str(instr.argval) if instr.argval is not None else None,
-            "line": instr.starts_line,
-        })
+        opcodes.append(
+            {
+                "offset": instr.offset,
+                "opname": instr.opname,
+                "arg": instr.arg,
+                "argval": str(instr.argval) if instr.argval is not None else None,
+                "line": instr.starts_line,
+            }
+        )
 
     # Get pyc size estimate
     pyc_size = len(marshal.dumps(compiled))
@@ -56,6 +60,7 @@ def get_bytecode(code: str) -> dict:
         "output": stdout_capture.getvalue(),
         "exec_time_ms": round(exec_ms, 3),
         "pyc_size": pyc_size,
+        "peak_rss_kb": int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss),
         "error": error,
     }
 

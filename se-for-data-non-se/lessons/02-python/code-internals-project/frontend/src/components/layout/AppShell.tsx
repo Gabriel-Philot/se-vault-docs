@@ -29,16 +29,7 @@ export function AppShell({
       />
       <header className="sticky top-0 z-50 border-b border-ci-border/80 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-ci-panel)_95%,transparent)_0%,color-mix(in_srgb,var(--color-ci-bg)_86%,transparent)_100%)] backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-4 sm:gap-5">
-            <div className="space-y-1">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-ci-cyan/80">
-                Software Engineering for Data
-              </p>
-              <p className="text-sm font-semibold font-mono text-ci-green sm:text-base">
-                Code Internals Panels
-              </p>
-            </div>
-
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
               onClick={onGoStart}

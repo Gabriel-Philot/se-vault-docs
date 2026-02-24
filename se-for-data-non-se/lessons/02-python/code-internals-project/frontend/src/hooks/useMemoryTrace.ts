@@ -130,7 +130,13 @@ export function useMemoryTrace() {
     if (sessionId) fetchStep(sessionId, currentStep);
   }, [sessionId, currentStep, fetchStep]);
 
-  const play = useCallback(() => setIsPlaying(true), []);
+  const play = useCallback(() => {
+    if (!sessionId || totalSteps <= 0) return;
+    if (currentStep >= totalSteps - 1) {
+      setCurrentStep(0);
+    }
+    setIsPlaying(true);
+  }, [sessionId, totalSteps, currentStep]);
   const pause = useCallback(() => setIsPlaying(false), []);
 
   const stepForward = useCallback(() => {
