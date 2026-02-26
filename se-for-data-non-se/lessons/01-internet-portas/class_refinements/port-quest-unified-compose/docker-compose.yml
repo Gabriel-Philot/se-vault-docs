@@ -1,0 +1,70 @@
+services:
+  frontend:
+    build: ./frontend
+    container_name: command-center
+    expose:
+      - "3000"
+    networks:
+      - city-public
+    depends_on:
+      - gateway
+
+  gateway:
+    build: ./gateway
+    container_name: city-gate
+    ports:
+      - "80:80"
+    networks:
+      - city-public
+      - city-internal
+    depends_on:
+      - api
+
+  api:
+    build: ./api
+    container_name: city-hall
+    # No host port mapping: API is only reachable via the gateway (city-gate)
+    expose:
+      - "8000"
+    networks:
+      - city-internal
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://portquest:portquest@database:5432/portquest
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USER=portquest
+      - DB_PASSWORD=portquest
+      - DB_NAME=portquest
+
+  database:
+    image: postgres:16-alpine
+    container_name: municipal-archive
+    # No host port mapping: database is only reachable from city-internal network
+    expose:
+      - "5432"
+    networks:
+      - city-internal
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_USER=portquest
+      - POSTGRES_PASSWORD=portquest
+      - POSTGRES_DB=portquest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portquest"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  city-public:
+    driver: bridge
+  city-internal:
+    driver: bridge
+
+volumes:
+  db-data:
